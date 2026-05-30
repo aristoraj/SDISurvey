@@ -3,10 +3,14 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+// dist is always at repo root, one level up from server/
+const DIST       = path.resolve(__dirname, '..', 'dist');
 
 // ── Timestamp helpers ────────────────────────────────────────────────────────
 export function ts() {
@@ -42,7 +46,6 @@ app.use(express.json());
 app.use('/api', apiRouter);
 
 // ── Serve React frontend (production build) ──────────────────────────────────
-const DIST = path.join(__dirname, '../dist');
 app.use(express.static(DIST));
 
 // SPA catch-all — every non-API route serves index.html
@@ -64,4 +67,6 @@ app.listen(PORT, () => {
   log('info', `Zoho owner : ${process.env.ZOHO_OWNER || 'straydoginstitute'}`);
   log('info', `Zoho app   : ${process.env.ZOHO_APP   || 'stray-dog-institute'}`);
   log('info', `Serving frontend from: ${DIST}`);
+  const distExists = fs.existsSync(path.join(DIST, 'index.html'));
+  log(distExists ? 'info' : 'error', `dist/index.html ${distExists ? '✅ found' : '❌ NOT FOUND — was the frontend built?'}`);
 });
