@@ -60,7 +60,8 @@ router.get('/previous-response', async (req, res) => {
   try {
     // Step 1: Resolve year → Grant_Cycle record ID
     log('info', `[api/previous-response] Step 1 — Find Grant_Cycle record for year ${targetYear}`);
-    const cycleResp    = await getReportRecords(GRANT_CYCLE_REPORT, `(${CYCLE_FIELD}=="${targetYear}")`, 1);
+    // Grant_Cycle is a Number field — no quotes around the value
+    const cycleResp    = await getReportRecords(GRANT_CYCLE_REPORT, `(${CYCLE_FIELD}==${targetYear})`, 1);
     const cycleRecords = cycleResp.data || [];
 
     if (!cycleRecords.length) {

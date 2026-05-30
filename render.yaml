@@ -1,26 +1,10 @@
 services:
-
-  # ── Frontend — React/Vite static site ───────────────────────────────────────
   - type: web
-    name: sdi-survey-frontend
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://sdisurvey-1.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
-  # ── Backend — Node.js API proxy ──────────────────────────────────────────────
-  - type: web
-    name: sdi-survey-api
+    name: sdi-survey
     env: node
-    rootDir: server
-    buildCommand: npm install
-    startCommand: node index.js
+    # Build React frontend first, then install server deps
+    buildCommand: npm install && npm run build && cd server && npm install
+    startCommand: node server/index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -42,9 +26,7 @@ services:
         value: Current_Year
       - key: ZOHO_CYCLE_FIELD
         value: Grant_Cycle
-      - key: FRONTEND_URL
-        value: https://sdi-survey-frontend.onrender.com
-      # Add these 3 manually in Render dashboard — never commit secrets:
+      # Secrets — add manually in Render dashboard, never commit:
       - key: ZOHO_CLIENT_ID
         sync: false
       - key: ZOHO_CLIENT_SECRET

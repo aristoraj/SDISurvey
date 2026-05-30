@@ -1,4 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Production: same origin (empty string → relative /api/... calls)
+// Local dev: API runs on separate port 3001
+const API_URL = import.meta.env.VITE_API_URL
+  ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
 // Fetch previous year's survey response for a given email
 // Returns { found: bool, year: string, record: {} } or { found: false }

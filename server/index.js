@@ -2,13 +2,16 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
 
-// ── Timestamp helper ─────────────────────────────────────────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ── Timestamp helpers ────────────────────────────────────────────────────────
 export function ts() {
   return new Date().toISOString();
 }
-
 export function log(level, ...args) {
   console.log(`[${ts()}] [${level.toUpperCase()}]`, ...args);
 }
@@ -16,39 +19,35 @@ export function log(level, ...args) {
 // ── App ──────────────────────────────────────────────────────────────────────
 const app = express();
 
-// HTTP access log — every request logged with method, path, status, response time
+// HTTP access log
 morgan.token('ts', ts);
 app.use(morgan('[:ts] :method :url :status :res[content-length]b — :response-time ms', {
   stream: { write: msg => process.stdout.write(msg) },
 }));
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
-const ALLOWED = [
-  'https://sdi-survey-frontend.onrender.com',
-  'https://aristoraj.github.io',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
+// ── CORS (only needed for local dev — same origin in production) ─────────────
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // curl / Postman / server-to-server
-    if (ALLOWED.includes(origin) || origin.endsWith('.onrender.com')) {
-      return cb(null, true);
-    }
-    log('warn', `CORS blocked origin: ${origin}`);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    if (!origin) return cb(null, true);
+    const allowed = ['http://localhost:5173', 'http://localhost:5174'];
+    if (allowed.includes(origin) || origin.endsWith('.onrender.com')) return cb(null, true);
+    log('warn', `CORS blocked: ${origin}`);
+    cb(new Error(`CORS: ${origin} not allowed`));
   },
 }));
 
 app.use(express.json());
 
-// ── Routes ───────────────────────────────────────────────────────────────────
+// ── API routes ───────────────────────────────────────────────────────────────
 app.use('/api', apiRouter);
 
-app.get('/', (_req, res) => {
-  res.json({ service: 'SDI Survey API', status: 'running', ts: ts() });
+// ── Serve React frontend (production build) ──────────────────────────────────
+const DIST = path.join(__dirname, '../dist');
+app.use(express.static(DIST));
+
+// SPA catch-all — every non-API route serves index.html
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(DIST, 'index.html'));
 });
 
 // ── Global error handler ─────────────────────────────────────────────────────
@@ -61,8 +60,8 @@ app.use((err, req, res, _next) => {
 // ── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  log('info', `SDI Survey API listening on port ${PORT}`);
+  log('info', `SDI Survey listening on port ${PORT}`);
   log('info', `Zoho owner : ${process.env.ZOHO_OWNER || 'straydoginstitute'}`);
   log('info', `Zoho app   : ${process.env.ZOHO_APP   || 'stray-dog-institute'}`);
-  log('info', `Allowed origins: ${ALLOWED.join(', ')}`);
+  log('info', `Serving frontend from: ${DIST}`);
 });
