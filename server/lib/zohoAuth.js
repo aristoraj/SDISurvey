@@ -1,15 +1,16 @@
-// Manages Zoho OAuth access tokens using a refresh token.
-// Tokens are cached in memory and auto-refreshed before expiry.
+import { log } from '../index.js';
 
 let cache = { token: null, expiresAt: 0 };
 
 export async function getAccessToken() {
-  // Return cached token if still valid (with 60s buffer)
   if (cache.token && Date.now() < cache.expiresAt - 60_000) {
+    log('info', `[zohoAuth] Using cached token (expires in ${Math.round((cache.expiresAt - Date.now()) / 1000)}s)`);
     return cache.token;
   }
 
-  const domain  = process.env.ZOHO_DOMAIN || 'zoho.com';
+  log('info', '[zohoAuth] Refreshing access token...');
+
+  const domain   = process.env.ZOHO_DOMAIN || 'zoho.com';
   const tokenUrl = `https://accounts.${domain}/oauth/v2/token`;
 
   const body = new URLSearchParams({
@@ -19,10 +20,13 @@ export async function getAccessToken() {
     refresh_token: process.env.ZOHO_REFRESH_TOKEN,
   });
 
-  const res  = await fetch(tokenUrl, { method: 'POST', body });
-  const json = await res.json();
+  const start = Date.now();
+  const res   = await fetch(tokenUrl, { method: 'POST', body });
+  const json  = await res.json();
+  const ms    = Date.now() - start;
 
   if (!json.access_token) {
+    log('error', `[zohoAuth] Token refresh FAILED (${ms}ms):`, JSON.stringify(json));
     throw new Error(`Zoho token refresh failed: ${JSON.stringify(json)}`);
   }
 
@@ -31,6 +35,6 @@ export async function getAccessToken() {
     expiresAt: Date.now() + (json.expires_in ?? 3600) * 1000,
   };
 
-  console.log('[zohoAuth] Access token refreshed, expires in', json.expires_in, 's');
+  log('info', `[zohoAuth] Token refreshed OK (${ms}ms), expires in ${json.expires_in}s`);
   return cache.token;
 }
