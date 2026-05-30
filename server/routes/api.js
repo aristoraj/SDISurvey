@@ -74,10 +74,10 @@ router.get('/previous-response', async (req, res) => {
 
     // Step 2: Search survey report by email + year ID
     log('info', `[api/previous-response] Step 2 — Search survey report for email + cycle`);
-    // Current_Year is a lookup field — must use .ID suffix to match by record ID
+    // Current_Year is a lookup field — compare by numeric record ID (no quotes, no .ID)
     const surveyResp    = await getReportRecords(
       SURVEY_REPORT,
-      `(${EMAIL_FIELD}=="${email}" && ${YEAR_FIELD}.ID=="${cycleId}")`,
+      `(${EMAIL_FIELD}=="${email}" && ${YEAR_FIELD}==${cycleId})`,
       1
     );
     const surveyRecords = surveyResp.data || [];

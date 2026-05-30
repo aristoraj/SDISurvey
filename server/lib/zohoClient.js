@@ -3,23 +3,27 @@ import { log } from '../index.js';
 
 const OWNER  = process.env.ZOHO_OWNER  || 'straydoginstitute';
 const APP    = process.env.ZOHO_APP    || 'stray-dog-institute';
-const DOMAIN = process.env.ZOHO_DOMAIN || 'zoho.com';
-const BASE   = `https://creator.${DOMAIN}/api/v2/${OWNER}/${APP}`;
+// v2.1 API on zohoapis.com (correct base — not creator.zoho.com/api/v2)
+const BASE   = `https://www.zohoapis.com/creator/v2.1/data/${OWNER}/${APP}`;
 
 async function zohoGet(path, params = {}) {
   const token = await getAccessToken();
-  const url   = new URL(`${BASE}${path}`);
 
+  // Build query string using encodeURIComponent so spaces become %20, not +
+  const queryParts = [];
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== '') {
-      url.searchParams.set(k, String(v));
+      queryParts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
     }
   }
+  const fullUrl = queryParts.length
+    ? `${BASE}${path}?${queryParts.join('&')}`
+    : `${BASE}${path}`;
 
-  log('info', `[zohoClient] GET ${url.pathname}${url.search}`);
+  log('info', `[zohoClient] GET ${path}${queryParts.length ? '?' + queryParts.join('&') : ''}`);
   const start = Date.now();
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(fullUrl, {
     headers: {
       Authorization:  `Zoho-oauthtoken ${token}`,
       'Content-Type': 'application/json',
@@ -30,7 +34,7 @@ async function zohoGet(path, params = {}) {
   const text = await res.text();
 
   if (!res.ok) {
-    log('error', `[zohoClient] ${res.status} ${url.pathname} (${ms}ms) — ${text}`);
+    log('error', `[zohoClient] ${res.status} ${path} (${ms}ms) — ${text}`);
     throw new Error(`Zoho API ${res.status} at ${path}: ${text}`);
   }
 
@@ -38,12 +42,14 @@ async function zohoGet(path, params = {}) {
   try {
     json = JSON.parse(text);
   } catch {
-    log('error', `[zohoClient] Non-JSON response at ${path}: ${text}`);
+    log('error', `[zohoClient] Non-JSON at ${path}: ${text}`);
     throw new Error(`Zoho API non-JSON response at ${path}`);
   }
 
-  const count = Array.isArray(json.data) ? `${json.data.length} records` : 'ok';
-  log('info', `[zohoClient] ${res.status} ${url.pathname} (${ms}ms) — ${count}`);
+  const count = Array.isArray(json.data)
+    ? `${json.data.length} record(s)`
+    : `code=${json.code}`;
+  log('info', `[zohoClient] ${res.status} ${path} (${ms}ms) — ${count}`);
   return json;
 }
 
