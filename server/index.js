@@ -8,6 +8,7 @@ const app = express();
 // Allow requests from frontend (GitHub Pages) and local dev
 const ALLOWED = [
   'https://aristoraj.github.io',
+  'https://aristoraj.github.io/SDISurvey',
   'http://localhost:5173',
   'http://localhost:5174',
   process.env.FRONTEND_URL,
