@@ -125,12 +125,18 @@ export function CheckboxOption({ checked, onChange, label }) {
   );
 }
 
-export function PercentInput({ label, value, onChange, desc }) {
+export function PercentInput({ label, value, onChange, desc, hint }) {
   return (
     <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-green-300 transition-colors">
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-800">{label}</p>
         {desc && <p className="text-xs text-gray-500 mt-0.5">{desc}</p>}
+        {hint !== undefined && hint !== null && (
+          <p className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
+            <span>📅</span>
+            <span>Last reported: <strong>{hint}%</strong></span>
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <input

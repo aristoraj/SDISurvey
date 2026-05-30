@@ -1,15 +1,37 @@
 services:
   - type: web
-    name: sdi-survey
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: true
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    name: sdi-survey-api
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ZOHO_OWNER
+        value: straydoginstitute
+      - key: ZOHO_APP
+        value: stray-dog-institute
+      - key: ZOHO_DOMAIN
+        value: zoho.com
+      - key: ZOHO_SURVEY_FORM
+        value: State_of_the_Movement_Survey
+      - key: ZOHO_SURVEY_REPORT
+        value: State_of_the_Movement_Survey_Report
+      - key: ZOHO_GRANT_CYCLE_REPORT
+        value: All_Grant_Cycle
+      - key: ZOHO_EMAIL_FIELD
+        value: What_is_your_work_email_address
+      - key: ZOHO_YEAR_FIELD
+        value: Current_Year
+      - key: ZOHO_CYCLE_FIELD
+        value: Grant_Cycle
+      - key: FRONTEND_URL
+        value: https://aristoraj.github.io
+      # Add these 3 manually in Render dashboard — never commit secrets:
+      - key: ZOHO_CLIENT_ID
+        sync: false
+      - key: ZOHO_CLIENT_SECRET
+        sync: false
+      - key: ZOHO_REFRESH_TOKEN
+        sync: false

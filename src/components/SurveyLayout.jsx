@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { validatePage } from '../validation';
+import { fetchPreviousResponse } from '../lib/api';
+import { extractHints } from '../lib/fieldMapping';
 import Page1Profile from './pages/Page1Profile';
 import Page2Classification from './pages/Page2Classification';
 import Page3Revenue from './pages/Page3Revenue';
@@ -16,9 +18,30 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  const [hints, setHints] = useState(null);          // previous year's data
+  const [hintYear, setHintYear] = useState(null);    // which year was found
+  const [hintLoading, setHintLoading] = useState(false);
 
   function updateData(updates) {
     setFormData(prev => ({ ...prev, ...updates }));
+  }
+
+  // When leaving Page 1, fetch the previous year's response for this email
+  async function loadPreviousResponse(email) {
+    if (!email || hintLoading) return;
+    setHintLoading(true);
+    try {
+      const resp = await fetchPreviousResponse(email);
+      if (resp?.found && resp.record) {
+        setHints(extractHints(resp.record));
+        setHintYear(resp.year);
+        console.log('[survey] Previous response loaded for year', resp.year);
+      }
+    } catch (e) {
+      console.warn('[survey] Could not load previous response', e);
+    } finally {
+      setHintLoading(false);
+    }
   }
 
   function goNext() {
@@ -29,6 +52,10 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
       return;
     }
     setErrors({});
+    // Silently fetch previous response when leaving page 1
+    if (currentPage === 1 && formData.email) {
+      loadPreviousResponse(formData.email);
+    }
     setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -51,7 +78,7 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
 
   const progress = (currentPage / TOTAL_PAGES) * 100;
 
-  const pageProps = { tr, formData, updateData, errors };
+  const pageProps = { tr, formData, updateData, errors, hints, hintYear };
 
   const pages = [
     <Page1Profile {...pageProps} />,
@@ -98,6 +125,22 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
               {tr.pageOf(currentPage, TOTAL_PAGES)}
             </span>
           </div>
+          {/* Previous response hint banner */}
+          {hints && hintYear && currentPage >= 3 && currentPage <= 8 && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-xs font-medium">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Showing your <strong className="mx-1">{hintYear}</strong> responses as reference. Your previous percentages appear below each field.
+            </div>
+          )}
+          {hintLoading && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 text-xs">
+              <div className="w-3 h-3 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin" />
+              Looking up your previous response…
+            </div>
+          )}
+
           {/* Progress bar */}
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div

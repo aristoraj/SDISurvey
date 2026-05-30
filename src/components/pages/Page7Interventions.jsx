@@ -11,8 +11,9 @@ const GROUP_COLORS = {
 };
 const GROUPS = ['Government','Business','Public','Animals','Movement','Other'];
 
-export default function Page7Interventions({ tr, formData, updateData, errors }) {
+export default function Page7Interventions({ tr, formData, updateData, errors, hints }) {
   const e = errors || {};
+  const h = hints?.interventionPercentages || {};
   const pcts = formData.interventionPercentages || {};
   const setPct = key => val => updateData({ interventionPercentages: { ...pcts, [key]: val } });
   const total = INTERVENTIONS.reduce((sum, i) => sum + (parseFloat(pcts[i.key]) || 0), 0);
@@ -32,7 +33,7 @@ export default function Page7Interventions({ tr, formData, updateData, errors })
                   <p className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">{group}</p>
                   <div className="space-y-2">
                     {items.map(item => (
-                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} />
+                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} hint={h[item.key]} />
                     ))}
                   </div>
                 </div>
