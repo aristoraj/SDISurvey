@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { SectionHeader, QuestionBlock, InfoBox, PercentInput, TotalIndicator } from '../FormFields';
 import { COUNTRY_REGIONS } from '../../surveyData';
 
-export default function Page5Countries({ tr, formData, updateData }) {
+export default function Page5Countries({ tr, formData, updateData, errors }) {
+  const e = errors || {};
   const [expandedRegions, setExpandedRegions] = useState({});
   const [search, setSearch] = useState('');
 
@@ -137,7 +138,7 @@ export default function Page5Countries({ tr, formData, updateData }) {
 
         {/* Q17 - Percentages */}
         {selected.length > 0 && (
-          <QuestionBlock number="17" label={tr.q17} required>
+          <QuestionBlock number="17" label={tr.q17} required error={e.countryPercentages}>
             <div className="space-y-2 mb-3">
               {selected.map(country => (
                 <PercentInput

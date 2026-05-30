@@ -10,13 +10,17 @@ export function SectionHeader({ title, subtitle }) {
   );
 }
 
-export function QuestionBlock({ number, label, required, children }) {
+export function QuestionBlock({ number, label, required, children, error }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${
+      error ? 'border-red-400 shadow-red-100' : 'border-gray-200 hover:shadow-md'
+    }`}>
       <label className="block mb-3">
         <span className="flex items-start gap-2">
           {number && (
-            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center mt-0.5">
+            <span className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mt-0.5 ${
+              error ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+            }`}>
               {number}
             </span>
           )}
@@ -27,18 +31,30 @@ export function QuestionBlock({ number, label, required, children }) {
         </span>
       </label>
       {children}
+      {error && (
+        <p className="mt-2 flex items-center gap-1 text-red-600 text-xs font-medium">
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
-export function TextInput({ value, onChange, placeholder, type = 'text' }) {
+export function TextInput({ value, onChange, placeholder, type = 'text', error }) {
   return (
     <input
       type={type}
       value={value || ''}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all text-gray-800 placeholder-gray-400"
+      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 transition-all text-gray-800 placeholder-gray-400 ${
+        error
+          ? 'border-red-400 focus:border-red-500 focus:ring-red-100 bg-red-50'
+          : 'border-gray-200 focus:border-green-500 focus:ring-green-100'
+      }`}
     />
   );
 }
