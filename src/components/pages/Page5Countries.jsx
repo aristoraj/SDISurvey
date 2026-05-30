@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { SectionHeader, QuestionBlock, InfoBox, PercentInput, TotalIndicator } from '../FormFields';
 import { COUNTRY_REGIONS } from '../../surveyData';
 
-export default function Page5Countries({ tr, formData, updateData, errors }) {
+export default function Page5Countries({ tr, formData, updateData, errors, hints }) {
   const e = errors || {};
+  const h = hints?.countryPercentages || {};
   const [expandedRegions, setExpandedRegions] = useState({});
   const [search, setSearch] = useState('');
 
@@ -146,6 +147,7 @@ export default function Page5Countries({ tr, formData, updateData, errors }) {
                   label={country}
                   value={countryPcts[country]}
                   onChange={v => setCountryPct(country, v)}
+                  hint={h[country]}
                 />
               ))}
             </div>
