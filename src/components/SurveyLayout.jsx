@@ -132,23 +132,6 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
       <footer className="sticky bottom-0 z-50 bg-white border-t border-gray-200 shadow-lg">
         <div className="max-w-4xl mx-auto px-4 pt-2 pb-3 flex flex-col gap-2">
 
-          {/* Validation error banner */}
-          {Object.keys(errors).length > 0 && (
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-300 rounded-xl animate-pulse-once">
-              <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-red-700 text-xs font-semibold">Please complete all required fields before continuing.</p>
-                <ul className="mt-0.5 space-y-0.5">
-                  {Object.values(errors).map((msg, i) => (
-                    <li key={i} className="text-red-600 text-xs">• {msg}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
           {/* Dots row — centered, always visible, scales to any screen */}
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             {Array.from({ length: TOTAL_PAGES }, (_, i) => (
