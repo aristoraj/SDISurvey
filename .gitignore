@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Credential scripts — never commit these
+server/get-refresh-token.mjs
+server/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
