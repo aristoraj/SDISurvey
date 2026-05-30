@@ -35,7 +35,7 @@ services:
       - key: ZOHO_SURVEY_REPORT
         value: State_of_the_Movement_Survey_Report
       - key: ZOHO_GRANT_CYCLE_REPORT
-        value: All_Grant_Cycle
+        value: Grant_Cycles
       - key: ZOHO_EMAIL_FIELD
         value: What_is_your_work_email_address
       - key: ZOHO_YEAR_FIELD

@@ -6,7 +6,7 @@ const router = Router();
 
 const SURVEY_REPORT      = process.env.ZOHO_SURVEY_REPORT      || 'State_of_the_Movement_Survey_Report';
 const SURVEY_FORM        = process.env.ZOHO_SURVEY_FORM         || 'State_of_the_Movement_Survey';
-const GRANT_CYCLE_REPORT = process.env.ZOHO_GRANT_CYCLE_REPORT  || 'All_Grant_Cycle';
+const GRANT_CYCLE_REPORT = process.env.ZOHO_GRANT_CYCLE_REPORT  || 'Grant_Cycles';
 const EMAIL_FIELD        = process.env.ZOHO_EMAIL_FIELD         || 'What_is_your_work_email_address';
 const YEAR_FIELD         = process.env.ZOHO_YEAR_FIELD          || 'Current_Year';
 const CYCLE_FIELD        = process.env.ZOHO_CYCLE_FIELD         || 'Grant_Cycle';
