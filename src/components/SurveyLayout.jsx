@@ -15,7 +15,7 @@ import Page9Final from './pages/Page9Final';
 
 const TOTAL_PAGES = 9;
 
-export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false, widgetUser = null, initialFormData = {} }) {
+export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false, initialFormData = {} }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});

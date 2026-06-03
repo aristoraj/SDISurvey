@@ -4,70 +4,40 @@ import LanguageSelect from './components/LanguageSelect';
 import Introduction from './components/Introduction';
 import SurveyLayout from './components/SurveyLayout';
 import ThankYou from './components/ThankYou';
+import { useZohoUser } from './hooks/useZohoUser';
 import './App.css';
-
-// ── Phase 2: Zoho Widget detection ──────────────────────────────────────────
-// When running inside Zoho Creator as a widget, ZOHO.CREATOR is available.
-// The logged-in user's email is used directly — no OTP needed.
-function useZohoWidget() {
-  const [widgetUser, setWidgetUser] = useState(null); // { email, name } or null
-  const [widgetReady, setWidgetReady] = useState(false);
-
-  useEffect(() => {
-    // Not inside a Zoho Widget — proceed as public URL
-    if (typeof window.ZOHO === 'undefined' || !window.ZOHO?.CREATOR) {
-      setWidgetReady(true);
-      return;
-    }
-
-    // Use ZOHO.CREATOR.UTIL.getInitParams() — official way to get logged-in user
-    window.ZOHO.CREATOR.init()
-      .then(() => window.ZOHO.CREATOR.UTIL.getInitParams())
-      .then(params => {
-        const email = params?.loginUser || params?.loginName || params?.email || null;
-        if (email) {
-          setWidgetUser({
-            email,
-            name: params?.displayName || params?.loginName || email,
-          });
-          console.log('[widget] Zoho Creator user:', email);
-        } else {
-          console.warn('[widget] getInitParams returned no user email:', params);
-        }
-        setWidgetReady(true);
-      })
-      .catch(err => {
-        console.warn('[widget] SDK init failed, falling back to public mode:', err?.message || err);
-        setWidgetReady(true);
-      });
-  }, []);
-
-  return { widgetUser, widgetReady, isWidget: typeof window.ZOHO?.CREATOR !== 'undefined' };
-}
 
 export default function App() {
   const [lang, setLang]       = useState(null);
   const [step, setStep]       = useState('language');
   const [formData, setFormData] = useState({});
 
-  const { widgetUser, widgetReady, isWidget } = useZohoWidget();
+  // useZohoUser polls up to 10s for the SDK then gets loginUser from getInitParams()
+  const { email: zohoEmail, loading: zohoLoading, error: zohoError } = useZohoUser();
+
+  // Detect widget mode: ZOHO object exists on window (set by widgetsdk-min.js)
+  const isWidget = typeof window.ZOHO !== 'undefined' && !!window.ZOHO?.CREATOR;
 
   const langConfig = languages.find(l => l.code === lang) || {};
   const tr  = lang ? t[lang] : t['en'];
   const dir = langConfig.dir || 'ltr';
 
-  // Widget mode: skip language + intro, pre-fill email, go straight to survey
+  // Once Zoho SDK resolves, auto-enter survey if inside widget with a valid user
   useEffect(() => {
-    if (!widgetReady) return;
-    if (isWidget && widgetUser?.email) {
+    if (zohoLoading) return;
+    if (isWidget && zohoEmail) {
+      console.log('[App] Widget mode — auto-entering survey for', zohoEmail);
       setLang('en');
-      setFormData({ email: widgetUser.email, firstName: widgetUser.name });
+      setFormData({ email: zohoEmail });
       setStep('survey');
+    } else if (isWidget && !zohoEmail) {
+      console.warn('[App] Widget mode but no user email found. zohoError:', zohoError);
     }
-  }, [widgetReady, isWidget, widgetUser]);
+    // Non-widget: do nothing, proceed through normal language → intro → survey flow
+  }, [zohoLoading, isWidget, zohoEmail]);
 
-  // Show loading state while widget SDK initializes
-  if (!widgetReady) {
+  // While SDK is polling (widget mode only), show a brief loader
+  if (isWidget && zohoLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="flex flex-col items-center gap-3">
@@ -92,7 +62,6 @@ export default function App() {
           lang={lang}
           dir={dir}
           isWidget={isWidget}
-          widgetUser={widgetUser}
           initialFormData={formData}
           onSubmit={data => { setFormData(data); setStep('done'); }}
         />
