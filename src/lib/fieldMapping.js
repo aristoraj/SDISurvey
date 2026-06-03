@@ -113,8 +113,8 @@ function displayVal(val) {
   if (val === null || val === undefined || val === '') return null;
   if (Array.isArray(val)) return val.length ? multiVal(val) : null;
   if (typeof val === 'object') {
-    // URL field (type 17) uses .url key
-    return val.url || val.display_value || val.value || val.key || null;
+    // Zoho Creator v2.1 uses zc_display_value for lookup display names
+    return val.zc_display_value || val.url || val.display_value || val.value || val.key || null;
   }
   return String(val);
 }
@@ -256,26 +256,27 @@ export function extractPrefill(record) {
   const firstName = nameRaw.first_name || nameRaw.First_Name || nameRaw.firstname || '';
   const lastName  = nameRaw.last_name  || nameRaw.Last_Name  || nameRaw.lastname  || '';
 
-  // Country (type 14 — may be array or object with display_value)
+  // Country (type 14 — array with one item, zc_display_value is the display name)
   const countryRaw = record['In_what_country_is_your_organization_s_headquarters_located'];
   let country = '', countryId = null;
   if (Array.isArray(countryRaw) && countryRaw.length) {
-    country   = countryRaw[0]?.display_value || countryRaw[0]?.value || String(countryRaw[0]);
-    countryId = countryRaw[0]?.ID || null;
-  } else {
-    country   = displayVal(countryRaw) || '';
-    countryId = typeof countryRaw === 'object' ? countryRaw?.ID : null;
+    const c = countryRaw[0];
+    country   = c?.zc_display_value || c?.display_value || c?.value || '';
+    countryId = c?.ID || null;
+  } else if (countryRaw && typeof countryRaw === 'object') {
+    country   = countryRaw.zc_display_value || countryRaw.display_value || countryRaw.value || '';
+    countryId = countryRaw.ID || null;
   }
 
-  // Currency (type 12 — single lookup)
+  // Currency (type 12 — single lookup object, zc_display_value is the currency name)
   const currencyRaw = record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'];
   let currency = '', currencyId = null;
-  if (Array.isArray(currencyRaw) && currencyRaw.length) {
-    currency   = currencyRaw[0]?.display_value || currencyRaw[0]?.value || String(currencyRaw[0]);
+  if (currencyRaw && typeof currencyRaw === 'object' && !Array.isArray(currencyRaw)) {
+    currency   = currencyRaw.zc_display_value || currencyRaw.Currency_Name || currencyRaw.display_value || '';
+    currencyId = currencyRaw.ID || null;
+  } else if (Array.isArray(currencyRaw) && currencyRaw.length) {
+    currency   = currencyRaw[0]?.zc_display_value || currencyRaw[0]?.display_value || '';
     currencyId = currencyRaw[0]?.ID || null;
-  } else {
-    currency   = displayVal(currencyRaw) || '';
-    currencyId = typeof currencyRaw === 'object' ? currencyRaw?.ID : null;
   }
 
   // Website (type 17 — URL object: { url, display_value })
