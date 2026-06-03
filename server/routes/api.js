@@ -214,19 +214,23 @@ router.post('/submit', async (req, res) => {
       log('info', `[api/submit] Grant_Cycle ID for ${year} = ${cycleId}`);
     }
 
-    // Resolve country and currency lookup IDs in parallel
-    log('info', `[api/submit] Resolving lookups — country="${formData.country}" | currency="${formData.currency}"`);
-    const [countryId, currencyId] = await Promise.all([
-      resolveLookupId(COUNTRY_REPORT,  'Country',       formData.country,  lookupCache.country),
-      resolveLookupId(CURRENCY_REPORT, 'Currency_Name', formData.currency, lookupCache.currency),
-    ]);
+    // Use pre-resolved IDs from formData if available (set during prefill), else resolve now
+    let countryId  = formData._countryId  || null;
+    let currencyId = formData._currencyId || null;
 
-    // Inject resolved IDs into formData for mapper
-    const enrichedFormData = {
-      ...formData,
-      _countryId:  countryId,
-      _currencyId: currencyId,
-    };
+    if (!countryId || !currencyId) {
+      log('info', `[api/submit] Resolving lookups — country="${formData.country}" | currency="${formData.currency}"`);
+      const [cId, curId] = await Promise.all([
+        !countryId  ? resolveLookupId(COUNTRY_REPORT,  'Country',       formData.country,  lookupCache.country)  : Promise.resolve(countryId),
+        !currencyId ? resolveLookupId(CURRENCY_REPORT, 'Currency_Name', formData.currency, lookupCache.currency) : Promise.resolve(currencyId),
+      ]);
+      countryId  = cId;
+      currencyId = curId;
+    } else {
+      log('info', `[api/submit] Using pre-resolved IDs — country=${countryId} currency=${currencyId}`);
+    }
+
+    const enrichedFormData = { ...formData, _countryId: countryId, _currencyId: currencyId };
 
     // Log raw date for debugging
     log('info', `[api/submit] fiscalYearEnd raw="${formData.fiscalYearEnd}"`);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { validatePage } from '../validation';
 import { fetchPreviousResponse, submitSurvey, sendOTP } from '../lib/api';
-import { extractHints } from '../lib/fieldMapping';
+import { extractHints, extractPrefill } from '../lib/fieldMapping';
 import OTPModal from './OTPModal';
 import Page1Profile from './pages/Page1Profile';
 import Page2Classification from './pages/Page2Classification';
@@ -33,16 +33,27 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
     setFormData(prev => ({ ...prev, ...updates }));
   }
 
-  // Fetch previous response and store as hints — does NOT advance page
+  // Fetch previous response — stores hints AND pre-fills Page 1 inputs
   async function loadHints(email) {
     if (!email || hintLoading) return;
     setHintLoading(true);
     try {
       const resp = await fetchPreviousResponse(email);
       if (resp?.found && resp.record) {
+        // Set hints (shown as reference on all % pages)
         setHints(extractHints(resp.record));
         setHintYear(resp.year);
-        console.log('[survey] Previous response loaded for year', resp.year);
+        // Pre-fill Page 1 fields — merge with existing formData, never overwrite email
+        const prefill = extractPrefill(resp.record);
+        setFormData(prev => ({
+          ...prefill,    // previous year values as defaults
+          ...prev,       // keep anything already entered by user
+          email:         prev.email || email, // always keep current email
+          // Pre-resolved lookup IDs speed up submission (skip re-fetching)
+          _countryId:  prefill._countryId  || prev._countryId,
+          _currencyId: prefill._currencyId || prev._currencyId,
+        }));
+        console.log('[survey] Previous response loaded + pre-filled for year', resp.year);
       } else {
         console.log('[survey] No previous response found for', email);
       }

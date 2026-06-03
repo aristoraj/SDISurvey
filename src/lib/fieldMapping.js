@@ -219,3 +219,58 @@ export function extractHints(record) {
 
   return hints;
 }
+
+// Convert Zoho date string (dd-MM-yyyy) → HTML date input (YYYY-MM-DD)
+function zohoDateToInput(dateStr) {
+  if (!dateStr) return '';
+  // Handle dd-MM-yyyy format
+  const parts = String(dateStr).split('-');
+  if (parts.length === 3 && parts[2].length === 4) {
+    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  return '';
+}
+
+/**
+ * Extracts pre-fill values from a previous year's Zoho record.
+ * These are populated directly into formData inputs (not just shown as hints).
+ * The email field is never overwritten — caller keeps the current email.
+ */
+export function extractPrefill(record) {
+  if (!record) return {};
+
+  // Name field (type 29 — compound subfields)
+  const nameRaw = record['What_is_your_first_name'] || {};
+  const firstName = nameRaw.first_name || nameRaw.First_Name || '';
+  const lastName  = nameRaw.last_name  || nameRaw.Last_Name  || '';
+
+  // Country lookup — extract display value AND record ID (for submission)
+  const countryRaw  = record['In_what_country_is_your_organization_s_headquarters_located'];
+  const country     = displayVal(countryRaw) || (typeof countryRaw === 'string' ? countryRaw : '');
+  const countryId   = typeof countryRaw === 'object' ? countryRaw?.ID : null;
+
+  // Currency lookup — extract display value AND record ID
+  const currencyRaw = record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'];
+  const currency    = displayVal(currencyRaw) || (typeof currencyRaw === 'string' ? currencyRaw : '');
+  const currencyId  = typeof currencyRaw === 'object' ? currencyRaw?.ID : null;
+
+  const prefill = {
+    firstName,
+    lastName,
+    jobTitle:   record['What_is_your_job_title'] || '',
+    orgName:    record['a_What_is_your_organization_s_legal_name_If_your_organization_is_not_registered_please_provide_the'] || '',
+    orgAliases: record['b_Does_your_organization_use_any_other_name_s_If_so_please_list_them_here_If_not_leave_this_questi'] || '',
+    website:    record['What_is_your_organization_s_full_website_URL'] || '',
+    country,
+    currency,
+    // Store resolved lookup IDs so submit doesn't need to re-fetch them
+    _countryId:  countryId,
+    _currencyId: currencyId,
+    // Date: convert from Zoho dd-MM-yyyy to HTML YYYY-MM-DD
+    fiscalYearEnd: zohoDateToInput(record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D']),
+    staffCount: record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || '',
+  };
+
+  console.log('[fieldMapping] prefill extracted:', prefill);
+  return prefill;
+}
