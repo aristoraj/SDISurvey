@@ -132,8 +132,11 @@ router.post('/submit', async (req, res) => {
     // Create the record in Zoho Creator
     const result = await createRecord(SURVEY_FORM, payload);
 
-    const recordId = result.data?.ID || result.result?.ID || null;
-    log('info', `[api/submit] ✅ Record created — ID=${recordId} for ${email}`);
+    const recordId = result.data?.ID
+      || result.result?.ID
+      || result.result?.data?.ID
+      || null;
+    log('info', `[api/submit] ✅ Record created — ID=${recordId ?? 'check full response above'} for ${email}`);
 
     res.json({ success: true, recordId, year });
 

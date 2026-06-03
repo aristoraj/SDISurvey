@@ -89,6 +89,13 @@ export async function createRecord(formName, payload) {
     throw new Error(`Zoho create record ${res.status}: ${text}`);
   }
 
-  log('info', `[zohoClient] POST 201 /form/${formName} (${ms}ms) — record created: ${json.data?.ID || json.result?.ID || 'ok'}`);
+  // Zoho Creator v2.1 returns: { code:3000, result: { data: { ID: "..." } } }
+  const recordId = json.data?.ID
+    || json.result?.ID
+    || json.result?.data?.ID
+    || null;
+
+  log('info', `[zohoClient] POST 201 /form/${formName} (${ms}ms) — record ID=${recordId ?? 'unknown'}`);
+  log('info', `[zohoClient] Full create response: ${JSON.stringify(json)}`);
   return json;
 }
