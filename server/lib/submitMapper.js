@@ -92,7 +92,8 @@ export function buildSubmitPayload(formData, cycleId) {
   if (formData.jobTitle) data['What_is_your_job_title']                       = formData.jobTitle;
   if (formData.orgName)  data['a_What_is_your_organization_s_legal_name_If_your_organization_is_not_registered_please_provide_the'] = formData.orgName;
   if (formData.orgAliases) data['b_Does_your_organization_use_any_other_name_s_If_so_please_list_them_here_If_not_leave_this_questi'] = formData.orgAliases;
-  if (formData.website)  data['What_is_your_organization_s_full_website_URL'] = formData.website;
+  // URL field (type 17) requires object format {url: "https://..."} not plain string
+  if (formData.website)  data['What_is_your_organization_s_full_website_URL'] = { url: formData.website };
 
   // Country (type 14 = multi-select lookup) — pass as array of record IDs
   if (formData._countryId) {

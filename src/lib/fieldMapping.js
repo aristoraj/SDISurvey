@@ -190,8 +190,17 @@ export function extractHints(record) {
 
   // ── Non-% field hints (profile, classification, totals) ──────────────────
   hints.profile = {
-    country:         displayVal(record['In_what_country_is_your_organization_s_headquarters_located']),
-    currency:        displayVal(record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to']),
+    // Country: array with zc_display_value (Zoho v2.1)
+    country: (() => {
+      const v = record['In_what_country_is_your_organization_s_headquarters_located'];
+      if (Array.isArray(v)) return v[0]?.zc_display_value || v[0]?.display_value || null;
+      return v?.zc_display_value || displayVal(v);
+    })(),
+    // Currency: object with zc_display_value
+    currency: (() => {
+      const v = record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'];
+      return v?.zc_display_value || v?.Currency_Name || displayVal(v);
+    })(),
     fiscalYearEnd:   record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D'] || null,
     staffCount:      record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || null,
     // type 13 = single-select radio — Zoho may return string or {value,key} object
