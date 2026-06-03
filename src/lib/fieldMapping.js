@@ -112,7 +112,10 @@ export const OUTCOME_MAP = {
 function displayVal(val) {
   if (val === null || val === undefined || val === '') return null;
   if (Array.isArray(val)) return val.length ? multiVal(val) : null;
-  if (typeof val === 'object') return val.display_value || val.value || val.key || null;
+  if (typeof val === 'object') {
+    // URL field (type 17) uses .url key
+    return val.url || val.display_value || val.value || val.key || null;
+  }
   return String(val);
 }
 
@@ -239,20 +242,45 @@ function zohoDateToInput(dateStr) {
 export function extractPrefill(record) {
   if (!record) return {};
 
+  // ── Log raw values so we can see exactly what Zoho returns ───────────────
+  console.log('[prefill] RAW name field:', record['What_is_your_first_name']);
+  console.log('[prefill] RAW jobTitle:', record['What_is_your_job_title']);
+  console.log('[prefill] RAW orgName:', record['a_What_is_your_organization_s_legal_name_If_your_organization_is_not_registered_please_provide_the']);
+  console.log('[prefill] RAW website:', record['What_is_your_organization_s_full_website_URL']);
+  console.log('[prefill] RAW country:', record['In_what_country_is_your_organization_s_headquarters_located']);
+  console.log('[prefill] RAW currency:', record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to']);
+  console.log('[prefill] RAW fiscal:', record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D']);
+
   // Name field (type 29 — compound subfields)
-  const nameRaw = record['What_is_your_first_name'] || {};
-  const firstName = nameRaw.first_name || nameRaw.First_Name || '';
-  const lastName  = nameRaw.last_name  || nameRaw.Last_Name  || '';
+  const nameRaw   = record['What_is_your_first_name'] || {};
+  const firstName = nameRaw.first_name || nameRaw.First_Name || nameRaw.firstname || '';
+  const lastName  = nameRaw.last_name  || nameRaw.Last_Name  || nameRaw.lastname  || '';
 
-  // Country lookup — extract display value AND record ID (for submission)
-  const countryRaw  = record['In_what_country_is_your_organization_s_headquarters_located'];
-  const country     = displayVal(countryRaw) || (typeof countryRaw === 'string' ? countryRaw : '');
-  const countryId   = typeof countryRaw === 'object' ? countryRaw?.ID : null;
+  // Country (type 14 — may be array or object with display_value)
+  const countryRaw = record['In_what_country_is_your_organization_s_headquarters_located'];
+  let country = '', countryId = null;
+  if (Array.isArray(countryRaw) && countryRaw.length) {
+    country   = countryRaw[0]?.display_value || countryRaw[0]?.value || String(countryRaw[0]);
+    countryId = countryRaw[0]?.ID || null;
+  } else {
+    country   = displayVal(countryRaw) || '';
+    countryId = typeof countryRaw === 'object' ? countryRaw?.ID : null;
+  }
 
-  // Currency lookup — extract display value AND record ID
+  // Currency (type 12 — single lookup)
   const currencyRaw = record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'];
-  const currency    = displayVal(currencyRaw) || (typeof currencyRaw === 'string' ? currencyRaw : '');
-  const currencyId  = typeof currencyRaw === 'object' ? currencyRaw?.ID : null;
+  let currency = '', currencyId = null;
+  if (Array.isArray(currencyRaw) && currencyRaw.length) {
+    currency   = currencyRaw[0]?.display_value || currencyRaw[0]?.value || String(currencyRaw[0]);
+    currencyId = currencyRaw[0]?.ID || null;
+  } else {
+    currency   = displayVal(currencyRaw) || '';
+    currencyId = typeof currencyRaw === 'object' ? currencyRaw?.ID : null;
+  }
+
+  // Website (type 17 — URL object: { url, display_value })
+  const websiteRaw = record['What_is_your_organization_s_full_website_URL'];
+  const website    = (typeof websiteRaw === 'object' ? websiteRaw?.url || websiteRaw?.display_value : websiteRaw) || '';
 
   const prefill = {
     firstName,
@@ -260,17 +288,15 @@ export function extractPrefill(record) {
     jobTitle:   record['What_is_your_job_title'] || '',
     orgName:    record['a_What_is_your_organization_s_legal_name_If_your_organization_is_not_registered_please_provide_the'] || '',
     orgAliases: record['b_Does_your_organization_use_any_other_name_s_If_so_please_list_them_here_If_not_leave_this_questi'] || '',
-    website:    record['What_is_your_organization_s_full_website_URL'] || '',
+    website,
     country,
     currency,
-    // Store resolved lookup IDs so submit doesn't need to re-fetch them
     _countryId:  countryId,
     _currencyId: currencyId,
-    // Date: convert from Zoho dd-MM-yyyy to HTML YYYY-MM-DD
     fiscalYearEnd: zohoDateToInput(record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D']),
     staffCount: record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || '',
   };
 
-  console.log('[fieldMapping] prefill extracted:', prefill);
+  console.log('[prefill] RESULT:', prefill);
   return prefill;
 }
