@@ -14,6 +14,7 @@ const GROUPS = ['Government','Business','Public','Animals','Movement','Other'];
 export default function Page7Interventions({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.interventionPercentages || {};
+  const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const pcts = formData.interventionPercentages || {};
   const setPct = key => val => updateData({ interventionPercentages: { ...pcts, [key]: val } });
   const total = INTERVENTIONS.reduce((sum, i) => sum + (parseFloat(pcts[i.key]) || 0), 0);
@@ -33,7 +34,7 @@ export default function Page7Interventions({ tr, formData, updateData, errors, h
                   <p className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">{group}</p>
                   <div className="space-y-2">
                     {items.map(item => (
-                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} hint={h[item.key]} year={hintYear} />
+                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} hint={getHint(item.key)} year={hintYear} />
                     ))}
                   </div>
                 </div>

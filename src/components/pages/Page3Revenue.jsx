@@ -5,6 +5,8 @@ const REVENUE_SOURCES = ['rev_philanthropy','rev_public','rev_goods','rev_invest
 export default function Page3Revenue({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.revenueSources || {};
+  // If a previous response exists, show 0% for fields not in that response
+  const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const p = hints?.profile || {};
   const setRev = key => val => updateData({ revenueSources: { ...(formData.revenueSources || {}), [key]: val } });
   const sources = formData.revenueSources || {};
@@ -40,7 +42,7 @@ export default function Page3Revenue({ tr, formData, updateData, errors, hints, 
                 label={tr[key]}
                 value={sources[key]}
                 onChange={setRev(key)}
-                hint={h[key] !== undefined ? h[key] : undefined}
+                hint={getHint(key)}
                 year={hintYear}
               />
             ))}

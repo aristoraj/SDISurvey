@@ -241,6 +241,14 @@ export function buildSubmitPayload(formData, cycleId) {
   if (outPcts.increased_knowledge)    data['Increased_knowledge_or_skills_for_animal_advocacy'] = num(outPcts.increased_knowledge);
   if (outPcts.anti_speciesist)        data['Increased_prevalence_of_anti_speciesist_values']  = num(outPcts.anti_speciesist);
 
+  // ── Section totals — always 100 when form validation passes ─────────────
+  data['Total_Revenue']         = 100; // sum of revenue source %
+  data['Total_Expense']         = 100; // sum of expense allocation %
+  data['Total_Expenses_Country']= 100; // sum of country %
+  data['Total_Animal']          = 100; // sum of animal %
+  data['Intervation_Total']     = 100; // sum of intervention % (note: typo in Zoho field)
+  data['overall_intendedTotal'] = 100; // sum of outcome %
+
   // ── Final (Q21-23) ───────────────────────────────────────────────────────
   if (formData.comments) data['Do_you_need_to_clarify_any_of_your_responses_If_not_leave_blank'] = formData.comments;
 

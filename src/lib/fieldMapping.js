@@ -137,43 +137,42 @@ export function extractHints(record) {
     countryPercentages:      {},
   };
 
-  // Revenue sources
+  // Revenue sources — include 0 values (val >= 0)
   for (const [zohoField, ourKey] of Object.entries(REVENUE_MAP)) {
     const val = parseFloat(record[zohoField]);
-    if (!isNaN(val) && val > 0) hints.revenueSources[ourKey] = val;
+    if (!isNaN(val) && val >= 0) hints.revenueSources[ourKey] = val;
   }
 
   // Expense allocation
   for (const [zohoField, ourKey] of Object.entries(EXPENSE_ALLOCATION_MAP)) {
     const val = parseFloat(record[zohoField]);
-    if (!isNaN(val) && val > 0) hints.expenseAllocation[ourKey] = val;
+    if (!isNaN(val) && val >= 0) hints.expenseAllocation[ourKey] = val;
   }
 
   // Animals
   for (const [zohoField, ourKey] of Object.entries(ANIMAL_MAP)) {
     const val = parseFloat(record[zohoField]);
-    if (!isNaN(val) && val > 0) hints.animalPercentages[ourKey] = val;
+    if (!isNaN(val) && val >= 0) hints.animalPercentages[ourKey] = val;
   }
 
   // Interventions
   for (const [zohoField, ourKey] of Object.entries(INTERVENTION_MAP)) {
     const val = parseFloat(record[zohoField]);
-    if (!isNaN(val) && val > 0) hints.interventionPercentages[ourKey] = val;
+    if (!isNaN(val) && val >= 0) hints.interventionPercentages[ourKey] = val;
   }
 
   // Outcomes
   for (const [zohoField, ourKey] of Object.entries(OUTCOME_MAP)) {
     const val = parseFloat(record[zohoField]);
-    if (!isNaN(val) && val > 0) hints.outcomePercentages[ourKey] = val;
+    if (!isNaN(val) && val >= 0) hints.outcomePercentages[ourKey] = val;
   }
 
   // Country percentages — stored in Country_Expenses subform rows
-  // Each row: { Country: { display_value: "United States of America" }, Current_Percentage1: 45 }
   const subformRows = record.Country_Expenses || [];
   for (const row of subformRows) {
     const countryName = row.Country?.display_value || row.Country;
     const pct = parseFloat(row.Current_Percentage1);
-    if (countryName && !isNaN(pct) && pct > 0) {
+    if (countryName && !isNaN(pct) && pct >= 0) {
       hints.countryPercentages[countryName] = pct;
     }
   }

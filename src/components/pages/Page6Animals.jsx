@@ -14,6 +14,7 @@ const GROUP_COLORS = {
 export default function Page6Animals({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.animalPercentages || {};
+  const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const pcts = formData.animalPercentages || {};
   const setPct = key => val => updateData({ animalPercentages: { ...pcts, [key]: val } });
   const total = ANIMALS.reduce((sum, a) => sum + (parseFloat(pcts[a.key]) || 0), 0);
@@ -33,7 +34,7 @@ export default function Page6Animals({ tr, formData, updateData, errors, hints, 
                   <p className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">{group}</p>
                   <div className="space-y-2">
                     {animals.map(a => (
-                      <PercentInput key={a.key} label={a.label} value={pcts[a.key]} onChange={setPct(a.key)} hint={h[a.key]} year={hintYear} />
+                      <PercentInput key={a.key} label={a.label} value={pcts[a.key]} onChange={setPct(a.key)} hint={getHint(a.key)} year={hintYear} />
                     ))}
                   </div>
                 </div>

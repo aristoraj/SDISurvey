@@ -5,6 +5,7 @@ import { COUNTRY_REGIONS } from '../../surveyData';
 export default function Page5Countries({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.countryPercentages || {};
+  const getHint = country => hints ? (h[country] ?? 0) : undefined;
   const [expandedRegions, setExpandedRegions] = useState({});
   const [search, setSearch] = useState('');
 
@@ -147,7 +148,7 @@ export default function Page5Countries({ tr, formData, updateData, errors, hints
                   label={country}
                   value={countryPcts[country]}
                   onChange={v => setCountryPct(country, v)}
-                  hint={h[country]}
+                  hint={getHint(country)}
                   year={hintYear}
                 />
               ))}

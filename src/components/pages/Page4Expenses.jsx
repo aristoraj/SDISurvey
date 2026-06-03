@@ -3,6 +3,7 @@ import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator, InfoBox, Fi
 export default function Page4Expenses({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.expenseAllocation || {};
+  const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const p = hints?.profile || {};
   const setAlloc = key => val => updateData({ expenseAllocation: { ...(formData.expenseAllocation || {}), [key]: val } });
   const alloc = formData.expenseAllocation || {};
@@ -54,9 +55,9 @@ export default function Page4Expenses({ tr, formData, updateData, errors, hints,
 
         <QuestionBlock number="15" label={tr.q15} required error={e.expenseAllocation}>
           <div className="space-y-2 mb-3">
-            <PercentInput label={tr.exp_farmed}        value={alloc.farmed}        onChange={setAlloc('farmed')}        hint={h.farmed}        year={hintYear} />
-            <PercentInput label={tr.exp_other_animals} value={alloc.other_animals} onChange={setAlloc('other_animals')} hint={h.other_animals} year={hintYear} />
-            <PercentInput label={tr.exp_humans}        value={alloc.humans}        onChange={setAlloc('humans')}        hint={h.humans}        year={hintYear} />
+            <PercentInput label={tr.exp_farmed}        value={alloc.farmed}        onChange={setAlloc('farmed')}        hint={getHint('farmed')}        year={hintYear} />
+            <PercentInput label={tr.exp_other_animals} value={alloc.other_animals} onChange={setAlloc('other_animals')} hint={getHint('other_animals')} year={hintYear} />
+            <PercentInput label={tr.exp_humans}        value={alloc.humans}        onChange={setAlloc('humans')}        hint={getHint('humans')}        year={hintYear} />
           </div>
           <TotalIndicator total={total} tr={tr} />
         </QuestionBlock>
