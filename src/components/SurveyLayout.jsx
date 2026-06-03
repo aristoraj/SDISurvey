@@ -80,12 +80,12 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
     try {
       const result = await submitSurvey(formData, new Date().getFullYear().toString());
       console.log('[survey] Zoho record created:', result.recordId);
+      onSubmit({ ...formData, _zohoRecordId: result.recordId });
     } catch (err) {
-      // Log error but don't block — still show Thank You page
-      console.error('[survey] Zoho submit error (non-blocking):', err.message);
+      console.error('[survey] Zoho submit error:', err.message);
+      setSubmitError(err.message || 'Submission failed. Please try again.');
+      setSubmitting(false);
     }
-    // Always proceed to Thank You regardless of API result
-    onSubmit(formData);
   }
 
   const progress = (currentPage / TOTAL_PAGES) * 100;

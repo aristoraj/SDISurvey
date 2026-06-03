@@ -166,6 +166,9 @@ router.post('/submit', async (req, res) => {
       _currencyId: currencyId,
     };
 
+    // Log raw date for debugging
+    log('info', `[api/submit] fiscalYearEnd raw="${formData.fiscalYearEnd}"`);
+
     // Build Zoho payload from formData
     const payload = buildSubmitPayload(enrichedFormData, cycleId);
     log('info', `[api/submit] Payload built — ${Object.keys(payload.data).length} fields (country=${countryId ?? 'skipped'}, currency=${currencyId ?? 'skipped'})`);

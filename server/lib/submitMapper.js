@@ -55,15 +55,15 @@ const GRANTEE_VALUES = {
 };
 
 // Format a date string (YYYY-MM-DD) to Zoho format DD-MMM-YYYY e.g. 31-Mar-2026
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Zoho Creator org date format: dd-MM-yyyy  e.g. 31-03-2026
 function formatDate(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr + 'T12:00:00'); // noon UTC to avoid timezone day-shift
+  const d = new Date(dateStr + 'T12:00:00');
   if (isNaN(d.getTime())) return null;
   const day   = String(d.getUTCDate()).padStart(2, '0');
-  const month = MONTHS[d.getUTCMonth()];
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const year  = d.getUTCFullYear();
-  return `${day}-${month}-${year}`; // e.g. "31-Mar-2026"
+  return `${day}-${month}-${year}`; // e.g. "31-03-2026"
 }
 
 function num(val) {
@@ -104,6 +104,8 @@ export function buildSubmitPayload(formData, cycleId) {
   }
 
   const fiscalFormatted = formatDate(formData.fiscalYearEnd);
+  // eslint-disable-next-line no-console
+  console.log(`[submitMapper] date raw="${formData.fiscalYearEnd}" formatted="${fiscalFormatted}"`);
   if (fiscalFormatted)   data['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D'] = fiscalFormatted;
 
   if (formData.staffCount != null) data['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] = String(formData.staffCount);
@@ -249,5 +251,6 @@ export function buildSubmitPayload(formData, cycleId) {
     data['Please_select_one_organization_The_list_below_is_shown_in_randomized_order_so_the_order_you_see_ma'] = GRANTEE_VALUES[formData.granteeOrg] || formData.granteeOrg;
   }
 
-  return { data };
+  // Zoho Creator API v2.1 expects data as an array
+  return { data: [data] };
 }
