@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
+import { validateTokenOnStartup } from './lib/zohoAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -69,4 +70,7 @@ app.listen(PORT, () => {
   log('info', `Serving frontend from: ${DIST}`);
   const distExists = fs.existsSync(path.join(DIST, 'index.html'));
   log(distExists ? 'info' : 'error', `dist/index.html ${distExists ? '✅ found' : '❌ NOT FOUND — was the frontend built?'}`);
+
+  // Validate Zoho credentials on startup — logs clear error if scopes/token are wrong
+  validateTokenOnStartup();
 });
