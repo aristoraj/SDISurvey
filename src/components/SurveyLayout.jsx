@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { validatePage } from '../validation';
 import { fetchPreviousResponse, submitSurvey, sendOTP } from '../lib/api';
 import { extractHints } from '../lib/fieldMapping';
@@ -33,8 +33,9 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
     setFormData(prev => ({ ...prev, ...updates }));
   }
 
-  // Called after OTP verified OR skipped — loads hints then advances
-  async function loadHintsAndAdvance(email) {
+  // Fetch previous response and store as hints — does NOT advance page
+  async function loadHints(email) {
+    if (!email || hintLoading) return;
     setHintLoading(true);
     try {
       const resp = await fetchPreviousResponse(email);
@@ -42,15 +43,31 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
         setHints(extractHints(resp.record));
         setHintYear(resp.year);
         console.log('[survey] Previous response loaded for year', resp.year);
+      } else {
+        console.log('[survey] No previous response found for', email);
       }
     } catch (e) {
       console.warn('[survey] Could not load previous response', e);
     } finally {
       setHintLoading(false);
     }
+  }
+
+  // Load hints THEN advance page (used after OTP verification on public URL)
+  async function loadHintsAndAdvance(email) {
+    await loadHints(email);
     setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // Widget mode: load previous response on mount — email is already known from Zoho
+  useEffect(() => {
+    if (isWidget && initialFormData?.email) {
+      console.log('[survey] Widget mode — loading hints on mount for', initialFormData.email);
+      loadHints(initialFormData.email);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount only
 
   async function goNext() {
     const pageErrors = validatePage(currentPage, formData);
@@ -61,17 +78,17 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
     }
     setErrors({});
 
-    // Leaving Page 1 — check email for previous response
+    // Leaving Page 1
     if (currentPage === 1 && formData.email) {
-      const prevYear = String(new Date().getFullYear() - 1);
-
       if (isWidget) {
-        // Widget mode: user is already authenticated via Zoho — skip OTP, load hints directly
-        loadHintsAndAdvance(formData.email);
+        // Widget mode: hints already loaded on mount — just advance, no OTP needed
+        setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
-      // Public URL mode: check if previous response exists → OTP flow
+      // Public URL: check if email has previous response → OTP flow
+      const prevYear = String(new Date().getFullYear() - 1);
       setPendingNext(true);
       try {
         const result = await sendOTP(formData.email, prevYear);
