@@ -94,9 +94,11 @@ export function buildSubmitPayload(formData, cycleId) {
   if (formData.orgAliases) data['b_Does_your_organization_use_any_other_name_s_If_so_please_list_them_here_If_not_leave_this_questi'] = formData.orgAliases;
   if (formData.website)  data['What_is_your_organization_s_full_website_URL'] = formData.website;
 
-  // Lookup fields — pass display value, Zoho matches to record
-  if (formData.country)  data['In_what_country_is_your_organization_s_headquarters_located'] = formData.country;
-  if (formData.currency) data['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'] = formData.currency;
+  // NOTE: country and currency are lookup fields — Zoho requires the record ID,
+  // not the display value. These are resolved separately via resolveLookupIds()
+  // and injected by the route before calling buildSubmitPayload.
+  if (formData._countryId)  data['In_what_country_is_your_organization_s_headquarters_located'] = formData._countryId;
+  if (formData._currencyId) data['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to'] = formData._currencyId;
 
   const fiscalFormatted = formatDate(formData.fiscalYearEnd);
   if (fiscalFormatted)   data['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D'] = fiscalFormatted;

@@ -12,6 +12,33 @@ const EMAIL_FIELD        = process.env.ZOHO_EMAIL_FIELD         || 'What_is_your
 const YEAR_FIELD         = process.env.ZOHO_YEAR_FIELD          || 'Current_Year';
 const CYCLE_FIELD        = process.env.ZOHO_CYCLE_FIELD         || 'Grant_Cycle';
 
+// Lookup master report names — country and currency are stored in master forms
+const COUNTRY_REPORT     = process.env.ZOHO_COUNTRY_REPORT  || 'All_Countries_and_Areas';
+const CURRENCY_REPORT    = process.env.ZOHO_CURRENCY_REPORT || 'All_Currency_Masters';
+
+// In-memory cache for lookup IDs (country/currency don't change often)
+const lookupCache = { country: {}, currency: {} };
+
+async function resolveLookupId(report, fieldName, displayValue, cacheMap) {
+  if (!displayValue) return null;
+  if (cacheMap[displayValue]) return cacheMap[displayValue];
+
+  try {
+    const resp = await getReportRecords(report, `(${fieldName}=="${displayValue}")`, 1);
+    const id   = resp.data?.[0]?.ID || null;
+    if (id) {
+      cacheMap[displayValue] = id;
+      log('info', `[lookup] ${fieldName}="${displayValue}" → ID=${id} (cached)`);
+    } else {
+      log('warn', `[lookup] ${fieldName}="${displayValue}" → no match in ${report}`);
+    }
+    return id;
+  } catch (err) {
+    log('warn', `[lookup] Could not resolve ${fieldName}="${displayValue}": ${err.message}`);
+    return null;
+  }
+}
+
 // ── GET /api/health ──────────────────────────────────────────────────────────
 router.get('/health', (_req, res) => {
   log('info', '[api/health] ping');
@@ -125,9 +152,23 @@ router.post('/submit', async (req, res) => {
       log('info', `[api/submit] Grant_Cycle ID for ${year} = ${cycleId}`);
     }
 
+    // Resolve country and currency lookup IDs in parallel
+    log('info', `[api/submit] Resolving lookup IDs for country="${formData.country}" currency="${formData.currency}"`);
+    const [countryId, currencyId] = await Promise.all([
+      resolveLookupId(COUNTRY_REPORT,  'Country',       formData.country,  lookupCache.country),
+      resolveLookupId(CURRENCY_REPORT, 'Currency_Name', formData.currency, lookupCache.currency),
+    ]);
+
+    // Inject resolved IDs into formData for mapper
+    const enrichedFormData = {
+      ...formData,
+      _countryId:  countryId,
+      _currencyId: currencyId,
+    };
+
     // Build Zoho payload from formData
-    const payload = buildSubmitPayload(formData, cycleId);
-    log('info', `[api/submit] Payload built — ${Object.keys(payload.data).length} fields`);
+    const payload = buildSubmitPayload(enrichedFormData, cycleId);
+    log('info', `[api/submit] Payload built — ${Object.keys(payload.data).length} fields (country=${countryId ?? 'skipped'}, currency=${currencyId ?? 'skipped'})`);
 
     // Create the record in Zoho Creator
     const result = await createRecord(SURVEY_FORM, payload);

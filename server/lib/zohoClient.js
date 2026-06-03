@@ -84,9 +84,10 @@ export async function createRecord(formName, payload) {
   let json;
   try { json = JSON.parse(text); } catch { json = { raw: text }; }
 
-  if (!res.ok) {
-    log('error', `[zohoClient] POST ${res.status} /form/${formName} (${ms}ms) — ${text}`);
-    throw new Error(`Zoho create record ${res.status}: ${text}`);
+  if (!res.ok || json.code === 3001) {
+    const errDetail = json.error ? JSON.stringify(json.error) : text;
+    log('error', `[zohoClient] POST failed /form/${formName} (${ms}ms) — ${errDetail}`);
+    throw new Error(`Zoho create record failed: ${errDetail}`);
   }
 
   // Zoho Creator v2.1 returns: { code:3000, result: { data: { ID: "..." } } }
