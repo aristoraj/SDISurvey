@@ -303,8 +303,7 @@ export function extractPrefill(record) {
     currency,
     _countryId:  countryId,
     _currencyId: currencyId,
-    fiscalYearEnd: zohoDateToInput(record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D']),
-    staffCount: record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || '',
+    // Q7 and Q8 are NOT pre-filled — hints are shown but user enters fresh values
   };
 
   console.log('[prefill] RESULT:', prefill);
