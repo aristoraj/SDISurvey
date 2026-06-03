@@ -52,3 +52,32 @@ export async function fetchMetadata() {
     return null;
   }
 }
+
+// Submit completed survey — creates record in Zoho Creator
+export async function submitSurvey(formData, surveyYear) {
+  const res = await fetch(`${API_URL}/api/submit`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ formData, surveyYear }),
+    signal:  AbortSignal.timeout(20000), // 20s — creation can take a moment
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Submission failed');
+  return data;
+}
+
+// Save draft and get a resume token
+export async function saveDraft(formData) {
+  try {
+    const res = await fetch(`${API_URL}/api/save-draft`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ formData }),
+      signal:  AbortSignal.timeout(8000),
+    });
+    return await res.json();
+  } catch (err) {
+    console.warn('[api] saveDraft failed:', err.message);
+    return null;
+  }
+}

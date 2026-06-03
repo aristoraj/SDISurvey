@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { validatePage } from '../validation';
-import { fetchPreviousResponse } from '../lib/api';
+import { fetchPreviousResponse, submitSurvey } from '../lib/api';
 import { extractHints } from '../lib/fieldMapping';
 import Page1Profile from './pages/Page1Profile';
 import Page2Classification from './pages/Page2Classification';
@@ -18,9 +18,11 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
-  const [hints, setHints] = useState(null);          // previous year's data
-  const [hintYear, setHintYear] = useState(null);    // which year was found
+  const [hints, setHints] = useState(null);
+  const [hintYear, setHintYear] = useState(null);
   const [hintLoading, setHintLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   function updateData(updates) {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -66,14 +68,22 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const pageErrors = validatePage(currentPage, formData);
     if (Object.keys(pageErrors).length > 0) {
       setErrors(pageErrors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    onSubmit(formData);
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await submitSurvey(formData, new Date().getFullYear().toString());
+      onSubmit({ ...formData, _zohoRecordId: result.recordId });
+    } catch (err) {
+      setSubmitError(err.message || 'Submission failed. Please try again.');
+      setSubmitting(false);
+    }
   }
 
   const progress = (currentPage / TOTAL_PAGES) * 100;
@@ -221,16 +231,34 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
             ) : (
               <button
                 onClick={handleSubmit}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-sm shadow hover:shadow-md transition-all"
+                disabled={submitting}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-sm shadow hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span className="truncate">{tr.submit}</span>
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Submitting…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="truncate">{tr.submit}</span>
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </>
+                )}
               </button>
             )}
-          </div>
-
+            </div>
+            {/* Submit error */}
+            {submitError && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                {submitError}
+              </div>
+            )}
         </div>
       </footer>
     </div>

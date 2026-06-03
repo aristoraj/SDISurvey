@@ -62,3 +62,33 @@ export async function getFormFields(formName) {
   log('info', `[zohoClient] getFormFields form=${formName}`);
   return zohoGet(`/form/${formName}/fields`);
 }
+
+export async function createRecord(formName, payload) {
+  const token = await getAccessToken();
+  const url   = `${BASE}/form/${formName}`;
+
+  log('info', `[zohoClient] POST /form/${formName} — creating record`);
+  const start = Date.now();
+
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: {
+      Authorization:  `Zoho-oauthtoken ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const ms   = Date.now() - start;
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { json = { raw: text }; }
+
+  if (!res.ok) {
+    log('error', `[zohoClient] POST ${res.status} /form/${formName} (${ms}ms) — ${text}`);
+    throw new Error(`Zoho create record ${res.status}: ${text}`);
+  }
+
+  log('info', `[zohoClient] POST 201 /form/${formName} (${ms}ms) — record created: ${json.data?.ID || json.result?.ID || 'ok'}`);
+  return json;
+}

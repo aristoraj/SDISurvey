@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { getReportRecords, getFormFields } from '../lib/zohoClient.js';
+import { getReportRecords, getFormFields, createRecord } from '../lib/zohoClient.js';
+import { buildSubmitPayload } from '../lib/submitMapper.js';
 import { log } from '../index.js';
 
 const router = Router();
@@ -96,6 +97,81 @@ router.get('/previous-response', async (req, res) => {
     if (err.stack) log('error', err.stack);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── POST /api/submit ─────────────────────────────────────────────────────────
+// Creates a new survey record in Zoho Creator.
+router.post('/submit', async (req, res) => {
+  const { formData, surveyYear } = req.body;
+
+  if (!formData) {
+    return res.status(400).json({ error: 'formData is required' });
+  }
+
+  const email = formData.email || 'unknown';
+  log('info', `[api/submit] Submitting response for ${email}`);
+
+  try {
+    // Resolve the current survey year → Grant_Cycle record ID
+    const year = surveyYear || new Date().getFullYear().toString();
+    log('info', `[api/submit] Resolving Grant_Cycle ID for year ${year}`);
+
+    const cycleResp = await getReportRecords(GRANT_CYCLE_REPORT, `(${CYCLE_FIELD}==${year})`, 1);
+    const cycleId   = cycleResp.data?.[0]?.ID || null;
+
+    if (!cycleId) {
+      log('warn', `[api/submit] No Grant_Cycle found for ${year} — submitting without year link`);
+    } else {
+      log('info', `[api/submit] Grant_Cycle ID for ${year} = ${cycleId}`);
+    }
+
+    // Build Zoho payload from formData
+    const payload = buildSubmitPayload(formData, cycleId);
+    log('info', `[api/submit] Payload built — ${Object.keys(payload.data).length} fields`);
+
+    // Create the record in Zoho Creator
+    const result = await createRecord(SURVEY_FORM, payload);
+
+    const recordId = result.data?.ID || result.result?.ID || null;
+    log('info', `[api/submit] ✅ Record created — ID=${recordId} for ${email}`);
+
+    res.json({ success: true, recordId, year });
+
+  } catch (err) {
+    log('error', `[api/submit] ERROR for ${email}:`, err.message);
+    if (err.stack) log('error', err.stack);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/save-draft ──────────────────────────────────────────────────────
+// Saves partial form data to localStorage via response (client stores it).
+// No DB needed — client stores JSON, can resume on same device.
+// For cross-device: returns a draft token that can be shared via email.
+router.post('/save-draft', async (req, res) => {
+  const { formData } = req.body;
+  if (!formData?.email) {
+    return res.status(400).json({ error: 'email is required to save draft' });
+  }
+
+  log('info', `[api/save-draft] Saving draft for ${formData.email}`);
+
+  // Draft token = base64(email + timestamp) — used in resume URL
+  const token = Buffer.from(`${formData.email}:${Date.now()}`).toString('base64url');
+  const resumeUrl = `${req.headers.origin || ''}/?draft=${token}`;
+
+  // Store compressed formData as a string in the response
+  // Client also stores this in localStorage
+  const draftPayload = JSON.stringify(formData);
+
+  log('info', `[api/save-draft] Draft token generated for ${formData.email}`);
+  res.json({
+    success:   true,
+    token,
+    resumeUrl,
+    draftData: draftPayload,
+    message:   `Draft saved. Resume link: ${resumeUrl}`,
+  });
 });
 
 export default router;
