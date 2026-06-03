@@ -26,10 +26,21 @@ services:
         value: Current_Year
       - key: ZOHO_CYCLE_FIELD
         value: Grant_Cycle
-      # Secrets — add manually in Render dashboard, never commit:
+      # Zoho OAuth — add manually in Render dashboard:
       - key: ZOHO_CLIENT_ID
         sync: false
       - key: ZOHO_CLIENT_SECRET
         sync: false
       - key: ZOHO_REFRESH_TOKEN
+        sync: false
+      # SMTP for OTP emails — add manually in Render dashboard:
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
         sync: false

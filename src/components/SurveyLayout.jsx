@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { validatePage } from '../validation';
-import { fetchPreviousResponse, submitSurvey } from '../lib/api';
+import { fetchPreviousResponse, submitSurvey, sendOTP } from '../lib/api';
 import { extractHints } from '../lib/fieldMapping';
+import OTPModal from './OTPModal';
 import Page1Profile from './pages/Page1Profile';
 import Page2Classification from './pages/Page2Classification';
 import Page3Revenue from './pages/Page3Revenue';
@@ -14,23 +15,26 @@ import Page9Final from './pages/Page9Final';
 
 const TOTAL_PAGES = 9;
 
-export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
+export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false, widgetUser = null, initialFormData = {} }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [hints, setHints] = useState(null);
   const [hintYear, setHintYear] = useState(null);
   const [hintLoading, setHintLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  // OTP state
+  const [showOTP, setShowOTP] = useState(false);
+  const [otpYear, setOtpYear] = useState(null);
+  const [pendingNext, setPendingNext] = useState(false); // waiting for OTP before advancing
 
   function updateData(updates) {
     setFormData(prev => ({ ...prev, ...updates }));
   }
 
-  // When leaving Page 1, fetch the previous year's response for this email
-  async function loadPreviousResponse(email) {
-    if (!email || hintLoading) return;
+  // Called after OTP verified OR skipped — loads hints then advances
+  async function loadHintsAndAdvance(email) {
     setHintLoading(true);
     try {
       const resp = await fetchPreviousResponse(email);
@@ -44,9 +48,11 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
     } finally {
       setHintLoading(false);
     }
+    setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function goNext() {
+  async function goNext() {
     const pageErrors = validatePage(currentPage, formData);
     if (Object.keys(pageErrors).length > 0) {
       setErrors(pageErrors);
@@ -54,10 +60,36 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
       return;
     }
     setErrors({});
-    // Silently fetch previous response when leaving page 1
+
+    // Leaving Page 1 — check email for previous response
     if (currentPage === 1 && formData.email) {
-      loadPreviousResponse(formData.email);
+      const prevYear = String(new Date().getFullYear() - 1);
+
+      if (isWidget) {
+        // Widget mode: user is already authenticated via Zoho — skip OTP, load hints directly
+        loadHintsAndAdvance(formData.email);
+        return;
+      }
+
+      // Public URL mode: check if previous response exists → OTP flow
+      setPendingNext(true);
+      try {
+        const result = await sendOTP(formData.email, prevYear);
+        if (result.hasPreviousResponse) {
+          setOtpYear(prevYear);
+          setShowOTP(true);
+          setPendingNext(false);
+          return;
+        }
+      } catch (e) {
+        console.warn('[survey] OTP check failed, proceeding without hints', e);
+      }
+      setPendingNext(false);
+      setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
+
     setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -118,6 +150,23 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
 
   return (
     <div className="min-h-screen flex flex-col page-transition">
+      {/* OTP Modal */}
+      {showOTP && (
+        <OTPModal
+          email={formData.email}
+          year={otpYear}
+          tr={tr}
+          onVerified={() => {
+            setShowOTP(false);
+            loadHintsAndAdvance(formData.email);
+          }}
+          onSkip={() => {
+            setShowOTP(false);
+            setCurrentPage(p => Math.min(p + 1, TOTAL_PAGES));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
       {/* Sticky header */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3">
@@ -223,12 +272,17 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit }) {
             {currentPage < TOTAL_PAGES ? (
               <button
                 onClick={goNext}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-sm shadow hover:shadow-md transition-all"
+                disabled={pendingNext}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-sm shadow hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span className="truncate">{tr.next}</span>
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                {pendingNext ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>Checking…</span></>
+                ) : (
+                  <><span className="truncate">{tr.next}</span>
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg></>
+                )}
               </button>
             ) : (
               <button

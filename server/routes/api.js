@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getReportRecords, getFormFields, createRecord } from '../lib/zohoClient.js';
 import { buildSubmitPayload } from '../lib/submitMapper.js';
+import { generateOTP, verifyOTP } from '../lib/otpStore.js';
+import { sendOTPEmail } from '../lib/emailSender.js';
 import { log } from '../index.js';
 
 const router = Router();
@@ -124,6 +126,66 @@ router.get('/previous-response', async (req, res) => {
     if (err.stack) log('error', err.stack);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── POST /api/send-otp ───────────────────────────────────────────────────────
+// Checks if the email has a previous year response. If yes, sends OTP.
+// If no previous response, returns hasPreviousResponse: false — no OTP sent.
+router.post('/send-otp', async (req, res) => {
+  const { email, year } = req.body;
+  if (!email) return res.status(400).json({ error: 'email is required' });
+
+  const targetYear = year || String(new Date().getFullYear() - 1);
+  log('info', `[api/send-otp] Checking previous response for ${email} / ${targetYear}`);
+
+  try {
+    // Step 1: Get Grant_Cycle ID
+    const cycleResp = await getReportRecords(GRANT_CYCLE_REPORT, `(${CYCLE_FIELD}==${targetYear})`, 1);
+    const cycleId   = cycleResp.data?.[0]?.ID;
+
+    if (!cycleId) {
+      log('info', `[api/send-otp] No Grant_Cycle for ${targetYear} — no previous response`);
+      return res.json({ hasPreviousResponse: false });
+    }
+
+    // Step 2: Check if email has a response for this year
+    const surveyResp = await getReportRecords(
+      SURVEY_REPORT,
+      `(${EMAIL_FIELD}=="${email}" && ${YEAR_FIELD}==${cycleId})`,
+      1
+    );
+
+    if (!surveyResp.data?.length) {
+      log('info', `[api/send-otp] No previous response for ${email} — skipping OTP`);
+      return res.json({ hasPreviousResponse: false });
+    }
+
+    // Previous response exists — generate and send OTP
+    const otp = generateOTP(email);
+    await sendOTPEmail(email, otp);
+
+    log('info', `[api/send-otp] ✅ OTP sent to ${email} for ${targetYear}`);
+    res.json({ hasPreviousResponse: true, otpSent: true });
+
+  } catch (err) {
+    log('error', `[api/send-otp] ERROR for ${email}:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/verify-otp ─────────────────────────────────────────────────────
+router.post('/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ error: 'email and otp are required' });
+
+  const result = verifyOTP(email, otp);
+  if (!result.valid) {
+    log('warn', `[api/verify-otp] Failed for ${email}: ${result.reason}`);
+    return res.status(400).json({ error: result.reason });
+  }
+
+  log('info', `[api/verify-otp] ✅ Verified for ${email}`);
+  res.json({ verified: true });
 });
 
 // ── POST /api/submit ─────────────────────────────────────────────────────────

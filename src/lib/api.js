@@ -53,6 +53,30 @@ export async function fetchMetadata() {
   }
 }
 
+// Check if email has previous response & send OTP if it does
+export async function sendOTP(email, year) {
+  const res = await fetch(`${API_URL}/api/send-otp`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ email, year }),
+    signal:  AbortSignal.timeout(15000),
+  });
+  return await res.json();
+}
+
+// Verify OTP entered by user
+export async function verifyOTP(email, otp) {
+  const res = await fetch(`${API_URL}/api/verify-otp`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ email, otp }),
+    signal:  AbortSignal.timeout(8000),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Verification failed');
+  return data;
+}
+
 // Submit completed survey — creates record in Zoho Creator
 export async function submitSurvey(formData, surveyYear) {
   const res = await fetch(`${API_URL}/api/submit`, {
