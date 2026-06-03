@@ -11,7 +11,7 @@ const GROUP_COLORS = {
 };
 const GROUPS = ['Government','Business','Public','Animals','Movement','Other'];
 
-export default function Page7Interventions({ tr, formData, updateData, errors, hints }) {
+export default function Page7Interventions({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.interventionPercentages || {};
   const pcts = formData.interventionPercentages || {};
@@ -33,7 +33,7 @@ export default function Page7Interventions({ tr, formData, updateData, errors, h
                   <p className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">{group}</p>
                   <div className="space-y-2">
                     {items.map(item => (
-                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} hint={h[item.key]} />
+                      <PercentInput key={item.key} label={item.label} desc={item.desc} value={pcts[item.key]} onChange={setPct(item.key)} hint={h[item.key]} year={hintYear} />
                     ))}
                   </div>
                 </div>

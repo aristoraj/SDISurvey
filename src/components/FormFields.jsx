@@ -125,7 +125,7 @@ export function CheckboxOption({ checked, onChange, label }) {
   );
 }
 
-export function PercentInput({ label, value, onChange, desc, hint }) {
+export function PercentInput({ label, value, onChange, desc, hint, year }) {
   return (
     <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-green-300 transition-colors">
       <div className="flex-1 min-w-0">
@@ -134,7 +134,7 @@ export function PercentInput({ label, value, onChange, desc, hint }) {
         {hint !== undefined && hint !== null && (
           <p className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
             <span>📅</span>
-            <span>Last reported: <strong>{hint}%</strong></span>
+            <span><strong>{year || 'Last year'}</strong> reported: <strong>{hint}%</strong></span>
           </p>
         )}
       </div>
@@ -151,6 +151,17 @@ export function PercentInput({ label, value, onChange, desc, hint }) {
         <span className="text-gray-500 text-sm font-medium">%</span>
       </div>
     </div>
+  );
+}
+
+// Inline hint shown under any non-% field label
+export function FieldHint({ value, year }) {
+  if (value === null || value === undefined || value === '') return null;
+  return (
+    <p className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
+      <span>📅</span>
+      <span><strong>{year || 'Last year'}</strong> reported: <strong>{value}</strong></span>
+    </p>
   );
 }
 

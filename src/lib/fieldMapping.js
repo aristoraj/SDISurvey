@@ -108,6 +108,21 @@ export const OUTCOME_MAP = {
 // The subform row structure: { Country: {display_value: "United States"}, Current_Percentage1: 45 }
 // We extract these separately in extractHints below.
 
+// Helper to get display value from a Zoho lookup field (object or string)
+function displayVal(val) {
+  if (!val) return null;
+  if (typeof val === 'object') return val.display_value || val.value || null;
+  return String(val);
+}
+
+// Helper to format array or string multi-select values
+function multiVal(val) {
+  if (!val) return null;
+  if (Array.isArray(val)) return val.map(v => displayVal(v) || v).join(', ');
+  if (typeof val === 'object') return val.display_value || null;
+  return String(val);
+}
+
 // ─── Master extractor ────────────────────────────────────────────────────────
 // Converts a raw Zoho record into our internal hints structure.
 export function extractHints(record) {
@@ -162,6 +177,19 @@ export function extractHints(record) {
       hints.countryPercentages[countryName] = pct;
     }
   }
+
+  // ── Non-% field hints (profile, classification, totals) ──────────────────
+  hints.profile = {
+    country:         displayVal(record['In_what_country_is_your_organization_s_headquarters_located']),
+    currency:        displayVal(record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to']),
+    fiscalYearEnd:   record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D'] || null,
+    staffCount:      record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || null,
+    institutionalForm: record['Which_institutional_form_best_describes_your_organization'] || null,
+    domains:         multiVal(record['In_which_domains_does_your_organization_typically_operate']),
+    movementIdentity: record['Which_movement_identity_best_describes_your_organization_s_role_in_relation_to_animals_farmed_or_c'] || null,
+    totalRevenue:    record['a_For_your_last_fiscal_year_what_was_your_organization_s_total_revenue_from_all_sources_Please_ent1'] || null,
+    totalExpenses:   record['a_For_your_last_fiscal_year_what_were_your_organization_s_total_expenses_Please_write_your_answer'] || null,
+  };
 
   return hints;
 }

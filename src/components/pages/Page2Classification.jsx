@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { SectionHeader, QuestionBlock, RadioOption, CheckboxOption } from '../FormFields';
+import { SectionHeader, QuestionBlock, RadioOption, CheckboxOption, FieldHint } from '../FormFields';
 import { INSTITUTIONAL_FORMS, DOMAINS, MOVEMENT_IDENTITIES } from '../../surveyData';
 
-export default function Page2Classification({ tr, formData, updateData, errors }) {
+export default function Page2Classification({ tr, formData, updateData, errors, hints, hintYear }) {
   const set = key => val => updateData({ [key]: val });
   const e = errors || {};
+  const p = hints?.profile || {};
   const [otherForm, setOtherForm] = useState('');
   const [otherDomain, setOtherDomain] = useState('');
   const [otherMI, setOtherMI] = useState('');
@@ -46,6 +47,7 @@ export default function Page2Classification({ tr, formData, updateData, errors }
               )}
             </div>
           </div>
+          <FieldHint value={p.institutionalForm} year={hintYear} />
         </QuestionBlock>
 
         {/* Q10 */}
@@ -66,6 +68,7 @@ export default function Page2Classification({ tr, formData, updateData, errors }
                 placeholder="Please specify..." className="mt-2 w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:border-green-500 focus:outline-none text-sm" />
             )}
           </div>
+          <FieldHint value={p.domains} year={hintYear} />
         </QuestionBlock>
 
         {/* Q11 */}
@@ -84,6 +87,7 @@ export default function Page2Classification({ tr, formData, updateData, errors }
               )}
             </div>
           </div>
+          <FieldHint value={p.movementIdentity} year={hintYear} />
         </QuestionBlock>
 
       </div>

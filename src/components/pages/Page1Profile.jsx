@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SectionHeader, QuestionBlock, TextInput } from '../FormFields';
+import { SectionHeader, QuestionBlock, TextInput, FieldHint } from '../FormFields';
 import { COUNTRIES, CURRENCIES } from '../../surveyData';
 
 function SearchableList({ options, value, onChange, placeholder, error }) {
@@ -60,9 +60,10 @@ function SearchableList({ options, value, onChange, placeholder, error }) {
   );
 }
 
-export default function Page1Profile({ tr, formData, updateData, errors }) {
+export default function Page1Profile({ tr, formData, updateData, errors, hints, hintYear }) {
   const set = key => val => updateData({ [key]: val });
   const e = errors || {};
+  const p = hints?.profile || {};
 
   return (
     <div>
@@ -101,10 +102,12 @@ export default function Page1Profile({ tr, formData, updateData, errors }) {
 
         <QuestionBlock number="6a" label={tr.q6a} required error={e.country}>
           <SearchableList options={COUNTRIES} value={formData.country} onChange={set('country')} placeholder={tr.searchCountry} error={e.country} />
+          <FieldHint value={p.country} year={hintYear} />
         </QuestionBlock>
 
         <QuestionBlock number="6b" label={tr.q6b} required error={e.currency}>
           <SearchableList options={CURRENCIES} value={formData.currency} onChange={set('currency')} placeholder={tr.searchCurrency} error={e.currency} />
+          <FieldHint value={p.currency} year={hintYear} />
         </QuestionBlock>
 
         <QuestionBlock number="7" label={tr.q7} required error={e.fiscalYearEnd}>
@@ -118,6 +121,7 @@ export default function Page1Profile({ tr, formData, updateData, errors }) {
               }`}
             />
             <p className="text-xs text-gray-400">Many organizations use December 31</p>
+            <FieldHint value={p.fiscalYearEnd} year={hintYear} />
           </div>
         </QuestionBlock>
 
@@ -132,6 +136,7 @@ export default function Page1Profile({ tr, formData, updateData, errors }) {
               e.staffCount ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-green-500'
             }`}
           />
+          <FieldHint value={p.staffCount} year={hintYear} />
         </QuestionBlock>
 
       </div>

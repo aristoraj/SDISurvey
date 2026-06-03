@@ -1,7 +1,7 @@
 import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator } from '../FormFields';
 import { OUTCOMES } from '../../surveyData';
 
-export default function Page8Outcomes({ tr, formData, updateData, errors, hints }) {
+export default function Page8Outcomes({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.outcomePercentages || {};
   const pcts = formData.outcomePercentages || {};
@@ -15,7 +15,7 @@ export default function Page8Outcomes({ tr, formData, updateData, errors, hints 
         <QuestionBlock number="20" label={tr.q20} required error={e.outcomePercentages}>
           <div className="space-y-2 mb-4">
             {OUTCOMES.map(outcome => (
-              <PercentInput key={outcome.key} label={outcome.label} value={pcts[outcome.key]} onChange={setPct(outcome.key)} hint={h[outcome.key]} />
+              <PercentInput key={outcome.key} label={outcome.label} value={pcts[outcome.key]} onChange={setPct(outcome.key)} hint={h[outcome.key]} year={hintYear} />
             ))}
           </div>
           <TotalIndicator total={total} tr={tr} />

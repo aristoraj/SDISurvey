@@ -11,7 +11,7 @@ const GROUP_COLORS = {
   'General': 'bg-gray-50 border-gray-200',
 };
 
-export default function Page6Animals({ tr, formData, updateData, errors, hints }) {
+export default function Page6Animals({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.animalPercentages || {};
   const pcts = formData.animalPercentages || {};
@@ -33,7 +33,7 @@ export default function Page6Animals({ tr, formData, updateData, errors, hints }
                   <p className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">{group}</p>
                   <div className="space-y-2">
                     {animals.map(a => (
-                      <PercentInput key={a.key} label={a.label} value={pcts[a.key]} onChange={setPct(a.key)} hint={h[a.key]} />
+                      <PercentInput key={a.key} label={a.label} value={pcts[a.key]} onChange={setPct(a.key)} hint={h[a.key]} year={hintYear} />
                     ))}
                   </div>
                 </div>

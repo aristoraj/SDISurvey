@@ -1,10 +1,11 @@
-import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator, InfoBox } from '../FormFields';
+import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator, InfoBox, FieldHint } from '../FormFields';
 
 const REVENUE_SOURCES = ['rev_philanthropy','rev_public','rev_goods','rev_investment','rev_financial','rev_vc'];
 
 export default function Page3Revenue({ tr, formData, updateData, errors, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.revenueSources || {};
+  const p = hints?.profile || {};
   const setRev = key => val => updateData({ revenueSources: { ...(formData.revenueSources || {}), [key]: val } });
   const sources = formData.revenueSources || {};
   const total = REVENUE_SOURCES.reduce((sum, k) => sum + (parseFloat(sources[k]) || 0), 0);
@@ -28,6 +29,7 @@ export default function Page3Revenue({ tr, formData, updateData, errors, hints, 
               }`}
             />
           </div>
+          <FieldHint value={p.totalRevenue} year={hintYear} />
         </QuestionBlock>
 
         <QuestionBlock number="13" label={tr.q13} required error={e.revenueSources}>
@@ -39,6 +41,7 @@ export default function Page3Revenue({ tr, formData, updateData, errors, hints, 
                 value={sources[key]}
                 onChange={setRev(key)}
                 hint={h[key] !== undefined ? h[key] : undefined}
+                year={hintYear}
               />
             ))}
           </div>
