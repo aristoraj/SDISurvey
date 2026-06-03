@@ -153,7 +153,7 @@ router.post('/submit', async (req, res) => {
     }
 
     // Resolve country and currency lookup IDs in parallel
-    log('info', `[api/submit] Resolving lookup IDs for country="${formData.country}" currency="${formData.currency}"`);
+    log('info', `[api/submit] Resolving lookups — country="${formData.country}" | currency="${formData.currency}"`);
     const [countryId, currencyId] = await Promise.all([
       resolveLookupId(COUNTRY_REPORT,  'Country',       formData.country,  lookupCache.country),
       resolveLookupId(CURRENCY_REPORT, 'Currency_Name', formData.currency, lookupCache.currency),
