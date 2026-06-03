@@ -14,27 +14,32 @@ function useZohoWidget() {
   const [widgetReady, setWidgetReady] = useState(false);
 
   useEffect(() => {
-    // Check if Zoho Widget SDK is present
+    // Not inside a Zoho Widget — proceed as public URL
     if (typeof window.ZOHO === 'undefined' || !window.ZOHO?.CREATOR) {
-      setWidgetReady(true); // not in widget, proceed as public
+      setWidgetReady(true);
       return;
     }
 
-    window.ZOHO.CREATOR.init().then(() => {
-      try {
-        const user = window.ZOHO.CREATOR.USER?.getAll?.();
-        if (user?.Email || user?.email) {
+    // Use ZOHO.CREATOR.UTIL.getInitParams() — official way to get logged-in user
+    window.ZOHO.CREATOR.init()
+      .then(() => window.ZOHO.CREATOR.UTIL.getInitParams())
+      .then(params => {
+        const email = params?.loginUser || params?.loginName || params?.email || null;
+        if (email) {
           setWidgetUser({
-            email: user.Email || user.email,
-            name:  user.Display_Name || user.display_name || '',
+            email,
+            name: params?.displayName || params?.loginName || email,
           });
-          console.log('[widget] Zoho Creator user detected:', user.Email || user.email);
+          console.log('[widget] Zoho Creator user:', email);
+        } else {
+          console.warn('[widget] getInitParams returned no user email:', params);
         }
-      } catch (e) {
-        console.warn('[widget] Could not get Zoho user:', e);
-      }
-      setWidgetReady(true);
-    }).catch(() => setWidgetReady(true));
+        setWidgetReady(true);
+      })
+      .catch(err => {
+        console.warn('[widget] SDK init failed, falling back to public mode:', err?.message || err);
+        setWidgetReady(true);
+      });
   }, []);
 
   return { widgetUser, widgetReady, isWidget: typeof window.ZOHO?.CREATOR !== 'undefined' };
