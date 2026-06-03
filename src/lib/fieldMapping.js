@@ -108,18 +108,26 @@ export const OUTCOME_MAP = {
 // The subform row structure: { Country: {display_value: "United States"}, Current_Percentage1: 45 }
 // We extract these separately in extractHints below.
 
-// Helper to get display value from a Zoho lookup field (object or string)
+// Extract a display string from any Zoho field value format
 function displayVal(val) {
-  if (!val) return null;
-  if (typeof val === 'object') return val.display_value || val.value || null;
+  if (val === null || val === undefined || val === '') return null;
+  if (Array.isArray(val)) return val.length ? multiVal(val) : null;
+  if (typeof val === 'object') return val.display_value || val.value || val.key || null;
   return String(val);
 }
 
-// Helper to format array or string multi-select values
+// Format multi-select (array, comma string, or object) into readable string
 function multiVal(val) {
-  if (!val) return null;
-  if (Array.isArray(val)) return val.map(v => displayVal(v) || v).join(', ');
-  if (typeof val === 'object') return val.display_value || null;
+  if (val === null || val === undefined || val === '') return null;
+  if (Array.isArray(val)) {
+    const items = val.map(v => {
+      if (typeof v === 'object') return v.display_value || v.value || v.key || String(v);
+      return String(v);
+    }).filter(Boolean);
+    return items.length ? items.join(', ') : null;
+  }
+  if (typeof val === 'object') return val.display_value || val.value || null;
+  // Handle comma-separated strings Zoho sometimes returns
   return String(val);
 }
 
@@ -183,12 +191,31 @@ export function extractHints(record) {
     currency:        displayVal(record['In_what_currency_would_you_like_to_report_your_financial_data_Your_selected_currency_will_apply_to']),
     fiscalYearEnd:   record['When_did_your_organization_s_last_fiscal_year_end_For_many_organizations_the_fiscal_year_ends_in_D'] || null,
     staffCount:      record['At_the_end_of_your_organization_s_last_fiscal_year_how_many_paid_staff_members_including_employees'] || null,
-    institutionalForm: record['Which_institutional_form_best_describes_your_organization'] || null,
-    domains:         multiVal(record['In_which_domains_does_your_organization_typically_operate']),
-    movementIdentity: record['Which_movement_identity_best_describes_your_organization_s_role_in_relation_to_animals_farmed_or_c'] || null,
+    // type 13 = single-select radio — Zoho may return string or {value,key} object
+    institutionalForm: displayVal(record['Which_institutional_form_best_describes_your_organization'])
+      || record['Which_institutional_form_best_describes_your_organization'] || null,
+    // type 15 = multi-select checkbox — Zoho returns array or comma-separated string
+    domains: multiVal(record['In_which_domains_does_your_organization_typically_operate']),
+    // type 13 = single-select radio
+    movementIdentity: displayVal(record['Which_movement_identity_best_describes_your_organization_s_role_in_relation_to_animals_farmed_or_c'])
+      || record['Which_movement_identity_best_describes_your_organization_s_role_in_relation_to_animals_farmed_or_c'] || null,
     totalRevenue:    record['a_For_your_last_fiscal_year_what_was_your_organization_s_total_revenue_from_all_sources_Please_ent1'] || null,
     totalExpenses:   record['a_For_your_last_fiscal_year_what_were_your_organization_s_total_expenses_Please_write_your_answer'] || null,
   };
+
+  // Debug — log what was extracted so we can verify in browser console
+  console.log('[fieldMapping] profile hints extracted:', {
+    institutionalForm: hints.profile.institutionalForm,
+    domains:           hints.profile.domains,
+    movementIdentity:  hints.profile.movementIdentity,
+    country:           hints.profile.country,
+    currency:          hints.profile.currency,
+  });
+  console.log('[fieldMapping] raw classification fields:', {
+    q9: record['Which_institutional_form_best_describes_your_organization'],
+    q10: record['In_which_domains_does_your_organization_typically_operate'],
+    q11: record['Which_movement_identity_best_describes_your_organization_s_role_in_relation_to_animals_farmed_or_c'],
+  });
 
   return hints;
 }
