@@ -54,16 +54,16 @@ const GRANTEE_VALUES = {
   thrive:      'Thrive Philanthropy',
 };
 
-// Format a date string (YYYY-MM-DD) to Zoho format (DD-Mon-YYYY)
+// Format a date string (YYYY-MM-DD) to Zoho format DD-MMM-YYYY e.g. 31-Mar-2026
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function formatDate(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  return d.toLocaleDateString('en-GB', {
-    day:   '2-digit',
-    month: 'short',
-    year:  'numeric',
-  }).replace(/ /g, '-');  // "31 Dec 2025" → "31-Dec-2025"
+  const d = new Date(dateStr + 'T12:00:00'); // noon UTC to avoid timezone day-shift
+  if (isNaN(d.getTime())) return null;
+  const day   = String(d.getUTCDate()).padStart(2, '0');
+  const month = MONTHS[d.getUTCMonth()];
+  const year  = d.getUTCFullYear();
+  return `${day}-${month}-${year}`; // e.g. "31-Mar-2026"
 }
 
 function num(val) {
