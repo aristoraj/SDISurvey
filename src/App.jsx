@@ -22,19 +22,17 @@ export default function App() {
   const tr  = lang ? t[lang] : t['en'];
   const dir = langConfig.dir || 'ltr';
 
-  // Once Zoho SDK resolves, pre-set language + email but show intro page first
+  // Once Zoho SDK resolves, store email in formData — same page flow for all modes
+  // language → intro → survey (widget just has email pre-filled on Page 1)
   useEffect(() => {
     if (zohoLoading) return;
     if (isWidget && zohoEmail) {
-      console.log('[App] Widget mode — showing intro for', zohoEmail);
-      setLang('en');
+      console.log('[App] Widget mode — email pre-filled:', zohoEmail);
       setFormData({ email: zohoEmail });
-      setStep('intro'); // Show instructions before survey, same as public URL
+      // Do NOT change step — user still goes through language → intro → survey
     } else if (isWidget && !zohoEmail) {
-      console.log('[App] Widget SDK found but no user email — treating as public URL');
-      // Fall through to normal language → intro flow
+      console.log('[App] Widget SDK found but no email — public URL flow');
     }
-    // Non-widget: do nothing, proceed through normal language → intro → survey flow
   }, [zohoLoading, isWidget, zohoEmail]);
 
   // Show loader ONLY when we're confirmed inside Zoho (isWidget) AND still polling
