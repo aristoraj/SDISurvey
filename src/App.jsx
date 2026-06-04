@@ -22,22 +22,24 @@ export default function App() {
   const tr  = lang ? t[lang] : t['en'];
   const dir = langConfig.dir || 'ltr';
 
-  // Once Zoho SDK resolves, auto-enter survey if inside widget with a valid user
+  // Once Zoho SDK resolves, pre-set language + email but show intro page first
   useEffect(() => {
     if (zohoLoading) return;
     if (isWidget && zohoEmail) {
-      console.log('[App] Widget mode — auto-entering survey for', zohoEmail);
+      console.log('[App] Widget mode — showing intro for', zohoEmail);
       setLang('en');
       setFormData({ email: zohoEmail });
-      setStep('survey');
+      setStep('intro'); // Show instructions before survey, same as public URL
     } else if (isWidget && !zohoEmail) {
-      console.warn('[App] Widget mode but no user email found. zohoError:', zohoError);
+      console.log('[App] Widget SDK found but no user email — treating as public URL');
+      // Fall through to normal language → intro flow
     }
     // Non-widget: do nothing, proceed through normal language → intro → survey flow
   }, [zohoLoading, isWidget, zohoEmail]);
 
-  // While SDK is polling (widget mode only), show a brief loader
-  if (isWidget && zohoLoading) {
+  // Show loader ONLY when we're confirmed inside Zoho (isWidget) AND still polling
+  // On public URL: isWidget may be true briefly but zohoLoading resolves within 3s
+  if (zohoLoading && step === 'language') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="flex flex-col items-center gap-3">
