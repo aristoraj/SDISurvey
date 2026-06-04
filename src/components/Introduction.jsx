@@ -1,3 +1,10 @@
+const A = ({ href, children }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer"
+    className="text-green-700 underline hover:text-green-900 transition-colors">
+    {children}
+  </a>
+);
+
 export default function Introduction({ tr, onStart }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 page-transition">
@@ -13,9 +20,17 @@ export default function Introduction({ tr, onStart }) {
           <p className="text-green-600 font-medium">{tr.appSubtitle}</p>
         </div>
 
-        {/* Main content card */}
+        {/* Main content card — with hyperlinks */}
         <div className="bg-white rounded-3xl shadow-xl p-8 mb-6">
-          <p className="text-gray-700 leading-relaxed mb-4">{tr.introText}</p>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            <A href="https://straydoginstitute.org/">Stray Dog Institute</A>{' '}
+            as part of our{' '}
+            <A href="https://straydoginstitute.org/state-of-the-movement">State of the Movement</A>{' '}
+            initiative, invites you to participate in the 2026 survey of organizations working to benefit
+            animals farmed or caught for food. This research builds on the earlier efforts of{' '}
+            <A href="https://www.senterrafunders.org/">Senterra Funders</A>{' '}
+            (formerly Farmed Animal Funders), whose contributions we gratefully acknowledge.
+          </p>
           <p className="text-gray-700 leading-relaxed mb-4">{tr.introText2}</p>
           <p className="text-gray-700 leading-relaxed mb-4">{tr.introText3}</p>
           <p className="text-gray-600 italic">{tr.introText4}</p>
@@ -50,7 +65,7 @@ export default function Introduction({ tr, onStart }) {
               {tr.instructions}
             </h3>
             <ul className="space-y-2">
-              {[tr.instr1, tr.instr2, tr.instr3, tr.instr4].map((d, i) => (
+              {[tr.instr1, tr.instr2, tr.instr3].map((d, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-blue-900">
                   <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -58,6 +73,19 @@ export default function Introduction({ tr, onStart }) {
                   {d}
                 </li>
               ))}
+              {/* Last instruction with email hyperlink */}
+              <li className="flex items-start gap-2 text-sm text-blue-900">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>
+                  If you need help, please email us at{' '}
+                  <a href="mailto:surveys@straydoginstitute.org"
+                    className="text-blue-600 underline hover:text-blue-800">
+                    surveys@straydoginstitute.org
+                  </a>
+                </span>
+              </li>
             </ul>
           </div>
         </div>

@@ -37,7 +37,15 @@ export default function Page5Countries({ tr, formData, updateData, errors, hints
   return (
     <div>
       <SectionHeader title={tr.page5Title} subtitle={tr.page5Intro} />
-      <InfoBox variant="blue">{tr.page5Note}</InfoBox>
+      <InfoBox variant="blue">
+        The country and area list draws on names and groupings from the United Nations{' '}
+        <a href="https://unstats.un.org/sdgs/indicators/regional-groups/"
+          target="_blank" rel="noopener noreferrer"
+          className="underline text-blue-700 hover:text-blue-900">
+          Sustainable Development Goals
+        </a>
+        , with modification. No global list of nations is perfect, and we appreciate your patience with ours.
+      </InfoBox>
 
       <div className="space-y-4 mt-4">
         {/* Q16 */}

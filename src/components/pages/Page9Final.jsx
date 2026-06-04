@@ -22,7 +22,14 @@ export default function Page9Final({ tr, formData, updateData, errors, onSubmit 
             {tr.dataSharing}
           </h3>
           <p className="text-gray-600 text-sm mb-3">{tr.dataSharingText}</p>
-          <p className="text-gray-500 text-sm">{tr.dataSharingText2}</p>
+          <p className="text-gray-500 text-sm">
+            You may revoke either permission later through our{' '}
+            <a href="https://hub.straydoginstitute.org/" target="_blank" rel="noopener noreferrer"
+              className="text-blue-600 underline hover:text-blue-800">
+              Movement Hub
+            </a>{' '}
+            at hub.straydoginstitute.org.
+          </p>
         </div>
 
         <QuestionBlock number="22a" label={tr.q22a} required error={e.permission22a}>
