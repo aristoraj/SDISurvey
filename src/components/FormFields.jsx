@@ -12,9 +12,12 @@ export function SectionHeader({ title, subtitle }) {
 
 export function QuestionBlock({ number, label, required, children, error }) {
   return (
-    <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${
-      error ? 'border-red-400 shadow-red-100' : 'border-gray-200 hover:shadow-md'
-    }`}>
+    <div
+      data-question-error={error ? 'true' : undefined}
+      className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${
+        error ? 'border-red-400 shadow-red-100' : 'border-gray-200 hover:shadow-md'
+      }`}
+    >
       <label className="block mb-3">
         <span className="flex items-start gap-2">
           {number && (

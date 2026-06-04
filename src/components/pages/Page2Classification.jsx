@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { SectionHeader, QuestionBlock, RadioOption, CheckboxOption, FieldHint } from '../FormFields';
 import { INSTITUTIONAL_FORMS, DOMAINS, MOVEMENT_IDENTITIES } from '../../surveyData';
 
-export default function Page2Classification({ tr, formData, updateData, errors, hints, hintYear }) {
-  const set = key => val => updateData({ [key]: val });
+export default function Page2Classification({ tr, formData, updateData, errors, clearError, hints, hintYear }) {
+  const set = key => val => { updateData({ [key]: val }); clearError?.(key); };
   const e = errors || {};
   const p = hints?.profile || {};
   const [otherForm, setOtherForm] = useState('');
@@ -17,6 +17,7 @@ export default function Page2Classification({ tr, formData, updateData, errors, 
         ? current.filter(k => k !== key)
         : [...current, key],
     });
+    clearError?.('domains');
   };
 
   return (

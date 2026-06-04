@@ -33,6 +33,16 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
     setFormData(prev => ({ ...prev, ...updates }));
   }
 
+  // Clear a specific field's error immediately when user starts filling it
+  function clearError(key) {
+    setErrors(prev => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
   // Fetch previous response — stores hints AND pre-fills Page 1 inputs
   async function loadHints(email) {
     if (!email || hintLoading) return;
@@ -84,7 +94,15 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
     const pageErrors = validatePage(currentPage, formData);
     if (Object.keys(pageErrors).length > 0) {
       setErrors(pageErrors);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to the first errored field, not the top of page
+      setTimeout(() => {
+        const firstError = document.querySelector('[data-question-error="true"]');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
       return;
     }
     setErrors({});
@@ -150,7 +168,7 @@ export default function SurveyLayout({ tr, lang, dir, onSubmit, isWidget = false
 
   const progress = (currentPage / TOTAL_PAGES) * 100;
 
-  const pageProps = { tr, formData, updateData, errors, hints, hintYear };
+  const pageProps = { tr, formData, updateData, errors, clearError, hints, hintYear };
 
   const pages = [
     <Page1Profile {...pageProps} />,

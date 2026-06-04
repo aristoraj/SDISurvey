@@ -1,24 +1,33 @@
 import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator, InfoBox, FieldHint } from '../FormFields';
 
-export default function Page4Expenses({ tr, formData, updateData, errors, hints, hintYear }) {
+export default function Page4Expenses({ tr, formData, updateData, errors, clearError, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.expenseAllocation || {};
   const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const p = hints?.profile || {};
-  const setAlloc = key => val => updateData({ expenseAllocation: { ...(formData.expenseAllocation || {}), [key]: val } });
+  const setAlloc = key => val => { updateData({ expenseAllocation: { ...(formData.expenseAllocation || {}), [key]: val } }); clearError?.('expenseAllocation'); };
   const alloc = formData.expenseAllocation || {};
   const total = ['farmed','other_animals','humans'].reduce((sum, k) => sum + (parseFloat(alloc[k]) || 0), 0);
   const currSymbol = formData.currency ? formData.currency.split(' ')[0] : '$';
 
+  // Fix 1: Q14 expenses cannot be negative
   function numInput(field, errKey, hintVal) {
     return (
       <>
         <div className="flex items-center gap-3">
           <span className="text-gray-500 font-medium">{currSymbol}</span>
           <input
-            type="number" min="0"
+            type="number"
+            min="0"
             value={formData[field] ?? ''}
-            onChange={ev => updateData({ [field]: ev.target.value })}
+            onKeyDown={ev => ev.key === '-' && ev.preventDefault()}
+            onChange={ev => {
+              const v = ev.target.value;
+              if (v === '' || parseFloat(v) >= 0) {
+                updateData({ [field]: v });
+                clearError?.(errKey);
+              }
+            }}
             placeholder="0"
             className={`w-full max-w-xs px-4 py-3 rounded-xl border-2 focus:outline-none transition-all text-gray-800 ${
               e[errKey] ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-green-500'

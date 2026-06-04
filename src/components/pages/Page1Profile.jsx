@@ -1,14 +1,27 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SectionHeader, QuestionBlock, TextInput, FieldHint } from '../FormFields';
 import { COUNTRIES, CURRENCIES } from '../../surveyData';
 
+// Fix 3: Close dropdown on outside click
 function SearchableList({ options, value, onChange, placeholder, error }) {
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]     = useState(false);
+  const containerRef         = useRef(null);
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
 
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setSearch('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div
         className={`w-full px-4 py-3 rounded-xl border-2 focus-within:ring-2 flex items-center gap-2 cursor-text bg-white transition-all ${
           error
@@ -60,10 +73,12 @@ function SearchableList({ options, value, onChange, placeholder, error }) {
   );
 }
 
-export default function Page1Profile({ tr, formData, updateData, errors, hints, hintYear }) {
-  const set = key => val => updateData({ [key]: val });
+export default function Page1Profile({ tr, formData, updateData, errors, clearError, hints, hintYear }) {
   const e = errors || {};
   const p = hints?.profile || {};
+
+  // Fix 2: clear error immediately on change
+  const set = key => val => { updateData({ [key]: val }); clearError?.(key); };
 
   return (
     <div>
@@ -92,21 +107,33 @@ export default function Page1Profile({ tr, formData, updateData, errors, hints, 
             <TextInput value={formData.orgName} onChange={set('orgName')} placeholder="Organization Legal Name" error={e.orgName} />
           </QuestionBlock>
           <QuestionBlock number="4b" label={tr.q4b}>
-            <TextInput value={formData.orgAliases} onChange={set('orgAliases')} placeholder={tr.leaveBlank} />
+            <TextInput value={formData.orgAliases} onChange={val => updateData({ orgAliases: val })} placeholder={tr.leaveBlank} />
           </QuestionBlock>
         </div>
 
         <QuestionBlock number="5" label={tr.q5}>
-          <TextInput value={formData.website} onChange={set('website')} type="url" placeholder="https://example.org" />
+          <TextInput value={formData.website} onChange={val => updateData({ website: val })} type="url" placeholder="https://example.org" />
         </QuestionBlock>
 
         <QuestionBlock number="6a" label={tr.q6a} required error={e.country}>
-          <SearchableList options={COUNTRIES} value={formData.country} onChange={set('country')} placeholder={tr.searchCountry} error={e.country} />
+          <SearchableList
+            options={COUNTRIES}
+            value={formData.country}
+            onChange={val => { updateData({ country: val }); clearError?.('country'); }}
+            placeholder={tr.searchCountry}
+            error={e.country}
+          />
           <FieldHint value={p.country} year={hintYear} />
         </QuestionBlock>
 
         <QuestionBlock number="6b" label={tr.q6b} required error={e.currency}>
-          <SearchableList options={CURRENCIES} value={formData.currency} onChange={set('currency')} placeholder={tr.searchCurrency} error={e.currency} />
+          <SearchableList
+            options={CURRENCIES}
+            value={formData.currency}
+            onChange={val => { updateData({ currency: val }); clearError?.('currency'); }}
+            placeholder={tr.searchCurrency}
+            error={e.currency}
+          />
           <FieldHint value={p.currency} year={hintYear} />
         </QuestionBlock>
 
@@ -115,7 +142,7 @@ export default function Page1Profile({ tr, formData, updateData, errors, hints, 
             <input
               type="date"
               value={formData.fiscalYearEnd || ''}
-              onChange={ev => updateData({ fiscalYearEnd: ev.target.value })}
+              onChange={ev => { updateData({ fiscalYearEnd: ev.target.value }); clearError?.('fiscalYearEnd'); }}
               className={`w-52 px-4 py-3 rounded-xl border-2 focus:outline-none transition-all text-gray-800 ${
                 e.fiscalYearEnd ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-green-500'
               }`}
@@ -125,12 +152,20 @@ export default function Page1Profile({ tr, formData, updateData, errors, hints, 
           </div>
         </QuestionBlock>
 
+        {/* Fix 1: Q8 staff count — no negative values */}
         <QuestionBlock number="8" label={tr.q8} required error={e.staffCount}>
           <input
             type="number"
             min="0"
             value={formData.staffCount ?? ''}
-            onChange={ev => updateData({ staffCount: ev.target.value })}
+            onKeyDown={e => e.key === '-' && e.preventDefault()}
+            onChange={ev => {
+              const v = ev.target.value;
+              if (v === '' || parseFloat(v) >= 0) {
+                updateData({ staffCount: v });
+                clearError?.('staffCount');
+              }
+            }}
             placeholder="0"
             className={`w-40 px-4 py-3 rounded-xl border-2 focus:outline-none transition-all text-center text-lg font-semibold text-gray-800 ${
               e.staffCount ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-green-500'

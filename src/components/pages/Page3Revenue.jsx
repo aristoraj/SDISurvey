@@ -2,13 +2,12 @@ import { SectionHeader, QuestionBlock, PercentInput, TotalIndicator, InfoBox, Fi
 
 const REVENUE_SOURCES = ['rev_philanthropy','rev_public','rev_goods','rev_investment','rev_financial','rev_vc'];
 
-export default function Page3Revenue({ tr, formData, updateData, errors, hints, hintYear }) {
+export default function Page3Revenue({ tr, formData, updateData, errors, clearError, hints, hintYear }) {
   const e = errors || {};
   const h = hints?.revenueSources || {};
-  // If a previous response exists, show 0% for fields not in that response
   const getHint = key => hints ? (h[key] ?? 0) : undefined;
   const p = hints?.profile || {};
-  const setRev = key => val => updateData({ revenueSources: { ...(formData.revenueSources || {}), [key]: val } });
+  const setRev = key => val => { updateData({ revenueSources: { ...(formData.revenueSources || {}), [key]: val } }); clearError?.('revenueSources'); };
   const sources = formData.revenueSources || {};
   const total = REVENUE_SOURCES.reduce((sum, k) => sum + (parseFloat(sources[k]) || 0), 0);
 
@@ -18,13 +17,14 @@ export default function Page3Revenue({ tr, formData, updateData, errors, hints, 
       <InfoBox variant="amber">{tr.page3Note}</InfoBox>
       <div className="space-y-4 mt-4">
 
+        {/* Q12: revenue CAN be negative — no min constraint */}
         <QuestionBlock number="12" label={tr.q12} required error={e.totalRevenue}>
           <div className="flex items-center gap-3">
             <span className="text-gray-500 font-medium">{formData.currency ? formData.currency.split(' ')[0] : '$'}</span>
             <input
-              type="number" min="0"
+              type="number"
               value={formData.totalRevenue || ''}
-              onChange={ev => updateData({ totalRevenue: ev.target.value })}
+              onChange={ev => { updateData({ totalRevenue: ev.target.value }); clearError?.('totalRevenue'); }}
               placeholder="0"
               className={`w-full max-w-xs px-4 py-3 rounded-xl border-2 focus:outline-none transition-all text-gray-800 ${
                 e.totalRevenue ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-green-500'
